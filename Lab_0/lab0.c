@@ -1,27 +1,3 @@
-//
-//                       _oo0oo_
-//                      o8888888o
-//                      88" . "88
-//                      (| -_- |)
-//                      0\  =  /0
-//                    ___/`---'\___
-//                  .' \\|     |// '.
-//                 / \\|||  :  |||// \
-//                / _||||| -:- |||||- \
-//               |   | \\\  -  /// |   |
-//               | \_|  ''\---/''  |_/ |
-//               \  .-\__  '-'  ___/-. /
-//             ___'. .'  /--.--\  `. .'___
-//          ."" '<  `.___\_<|>_/___.' >' "".
-//         | | :  `- \`.;`\ _ /`;.`/ - ` : | |
-//         \  \ `_.   \_ __\ /__ _/   .-` /  /
-//     =====`-.____`.___ \_____/___.-`___.-'=====
-//                       `=---='
-//
-//
-//     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//               佛祖保佑         永无BUG
 #include <unistd.h> 
 #include <stdio.h>
 #include <stdlib.h> 
@@ -51,6 +27,7 @@ void seg_fault(){
 }
 
 void handler(int signum) {
+    //printf("SEGGG FAULT\n");
     fprintf(stderr, "Segmentation fault: %d\n", signum);
     exit(4);
 }
@@ -84,7 +61,7 @@ int main(int argc, char *argv[]){
                 other = 1; 
                 break; 
             case 'c':
-                cat = 2; 
+                signal(SIGSEGV, handler); 
                 break; 
             default: 
                 printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
@@ -92,10 +69,16 @@ int main(int argc, char *argv[]){
         };
     }
     
+    // if(argv[optind-1] != NULL){
+    //     printf("Unrecognized option '%s'\n", argv[optind-1]);
+    //     printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
+    //     exit(2);
+    // }
+
     if(other == 1)
         seg_fault(); 
-    if(cat == 2)
-        signal(SIGSEGV, handler);
+  
+        
 
     if(opt_in){
         int fd0 = open(opt_in, O_RDONLY);
@@ -121,13 +104,6 @@ int main(int argc, char *argv[]){
             dup(fd1);
             close(fd1); 
         }
-    }
-
-    //Unrecognized pattern 
-    if(argv[optind-1] != NULL){
-        printf("Unrecognized option '%s'\n", argv[optind-1]);
-        printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
-                exit(2);
     }
     
     read_to_write(0,1);
