@@ -1,5 +1,14 @@
+NAME: Liuyi Shi
+EMAIL: liuyi.shi@outlook.com
+ID: your student 904801945
+
+Credit: 
 getopt(3) from https://linux.die.net/man/3/getopt
 error handling from https://www.tutorialspoint.com/cprogramming/c_error_handling.htm
 unrecognized pattern: 
 https://stackoverflow.com/questions/2723888/where-does-getopt-long-store-an-unrecognized-option
 https://stackoverflow.com/questions/18079340/using-getopt-in-c-with-non-option-arguments
+Makefile: 
+https://www.cs.swarthmore.edu/~newhall/unixhelp/howto_makefiles.html
+Return value of segmentation fault: 
+https://stackoverflow.com/questions/14599670/what-error-code-does-a-process-that-segfaults-return

@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
     char *opt_in = NULL;
     char *opt_out = NULL; 
     int other = 0; 
-    int cat = 0; 
+    //int cat = 0; 
     static struct option long_option[] = {
         {"input", required_argument, 0, 'i'},
         {"output", required_argument, 0, 'o'},
@@ -65,10 +65,10 @@ int main(int argc, char *argv[]){
                 break; 
             default: 
                 printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
-                exit(2);
+                exit(1);
         };
     }
-    
+
     // if(argv[optind-1] != NULL){
     //     printf("Unrecognized option '%s'\n", argv[optind-1]);
     //     printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
