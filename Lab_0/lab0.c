@@ -59,7 +59,8 @@ int main(int argc, char *argv[]){
     int option_index = 0;
     char *opt_in = NULL;
     char *opt_out = NULL; 
-    int other = 0;  
+    int other = 0; 
+    int cat = 0; 
     static struct option long_option[] = {
         {"input", required_argument, 0, 'i'},
         {"output", required_argument, 0, 'o'},
@@ -83,24 +84,17 @@ int main(int argc, char *argv[]){
                 other = 1; 
                 break; 
             case 'c':
-                other = 2; 
+                cat = 2; 
                 break; 
             default: 
                 printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
                 exit(2);
         };
     }
-
-    //Unrecognized pattern 
-    if(argv[optind-1] != NULL){
-        printf("Unrecognized option '%s'\n", argv[optind-1]);
-        printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
-                exit(2);
-    }
     
     if(other == 1)
         seg_fault(); 
-    else if(other == 2)
+    if(cat == 2)
         signal(SIGSEGV, handler);
 
     if(opt_in){
@@ -127,6 +121,13 @@ int main(int argc, char *argv[]){
             dup(fd1);
             close(fd1); 
         }
+    }
+
+    //Unrecognized pattern 
+    if(argv[optind-1] != NULL){
+        printf("Unrecognized option '%s'\n", argv[optind-1]);
+        printf("Usage: lab0 --input=filename --output=filename <optional args.>\n");
+                exit(2);
     }
     
     read_to_write(0,1);
