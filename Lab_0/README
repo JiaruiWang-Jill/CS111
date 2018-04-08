@@ -2,10 +2,25 @@ NAME: Liuyi Shi
 EMAIL: liuyi.shi@outlook.com
 ID: 904801945
 
+lab0 is a program that does simple copying from standard input to its standard output. The whole program includes five files (lab0.c, Makefile, README, backtrace.png, breakpoint.png). 
 
+lab0.c contains the main file and does all the works required by the spec. 
 
+Makefile contains four options(make, make check, make dist, make clean). 'make' will simple build the whole program from the sourcefiles. 'make check' will tests if the program is built successfully or not. 'make dist' will create a .tar.gz file that includes all necessary files. 'make clean' will clean up all the files created by 'make' and possibly other files that have same suffix in this folder. 
 
-Credit: 
+README is this file. 
+
+backtrace.png and breakpoint.png are screenshots of the --segfault option of lab0. 
+
+The smoke-test in 'make check' contains six tests. 
+catch_test: Test whether --segfault --catch works or not.
+io_test: Test whether the whole function is working properly. 
+bad_intput_test: Test whehter it can detect unopenble input file. 
+bad_output_test: Test whether it can detect unwriteble file. 
+unrecongize_test_1: Test whether it can detech unlisted options like '--xxxx'
+unrecognize_test_2: Test whether it can detech unlisted options like '-xxx'
+
+Credits: 
 getopt(3) from https://linux.die.net/man/3/getopt
 error handling from https://www.tutorialspoint.com/cprogramming/c_error_handling.htm
 unrecognized pattern: 
