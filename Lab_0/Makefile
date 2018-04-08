@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS  = -g -Wall -Wextra
 
-SOURCEFILE = lab0.c README Makefile 
+SOURCEFILE = lab0.c README Makefile backtrace.png breakpoint.png
 
 TARGET = lab0
 
