@@ -31,6 +31,11 @@ if(pid == 0) {
 }
 printf("abc"); //both the parent and child will print 'abc' 
 ```
+### what happend to descriptors?
+child process will have a descriptor table will be the same as the parent process. Both tables will point to the same file 
+
+## Pipe 
+
 
 ## Lab1a 
 * For resetting the terminal, just use the professor's code. 
