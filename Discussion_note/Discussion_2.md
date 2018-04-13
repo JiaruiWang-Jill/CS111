@@ -35,6 +35,8 @@ printf("abc"); //both the parent and child will print 'abc'
 child process will have a descriptor table will be the same as the parent process. Both tables will point to the same file 
 
 ## Pipe 
+* __Always close the unsed file descriptors__
+
 
 
 ## Lab1a 
