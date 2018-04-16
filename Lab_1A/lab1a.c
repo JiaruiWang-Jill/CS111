@@ -10,6 +10,7 @@
 #include <poll.h> 
 #include <signal.h> 
 
+
 int shell_flag = 0;
 int debug_mod = 0;
 int to_child_pipe[2]; 
@@ -52,7 +53,7 @@ void set_terminal_mode(){
     tattr.c_iflag=ISTRIP;
     tattr.c_oflag=0;
     tattr.c_lflag=0;
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr); //TCSAFLUSH or TCSANOW ??
+    tcsetattr(STDIN_FILENO, TCSANOW, &tattr); //TCSAFLUSH or TCSANOW ??
     if(debug_mod){printf("DEBUG__end__set_terminal_mode\n");}
 }
 
@@ -102,12 +103,21 @@ void read_write_shell_wrapper(){
             fprintf(stderr,"poll() failed!\n");
             exit(1);
         }
+        if(return_value == 0) continue; 
         //KEYBOARD POLLIN
         if(pollfd_list[0].revents & POLLIN){
             char buffer_loc[256];
             int bytes_read = read(STDIN_FILENO, buffer_loc, 256);
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             read_write(buffer_loc, to_child_pipe[1], bytes_read);
+        }
+        if(pollfds[0].revents & POLLERR){
+            fprintf(stderr,"pollin error keyboard\n");
+            exit(1);
+        }
+        if(pollfds[0].revents & POLLHUP){
+            fprintf(stderr,"pollin error keyboard\n");
+            exit(1);
         }
         //PIPE POLLIN
         if(pollfd_list[1].revents & POLLIN){
@@ -212,6 +222,7 @@ int main(int argc, char *argv[]){
             close(from_child_pipe[0]);
             dup2(to_child_pipe[0], STDIN_FILENO);
             dup2(from_child_pipe[1], STDOUT_FILENO);
+            dup2(from_child_pipe[1], STDERR_FILENO);
             close(to_child_pipe[0]);
             close(from_child_pipe[1]);
 
