@@ -111,11 +111,11 @@ void read_write_shell_wrapper(){
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             read_write(buffer_loc, to_child_pipe[1], bytes_read);
         }
-        if(pollfds[0].revents & POLLERR){
+        if(pollfd_list[0].revents & POLLERR){
             fprintf(stderr,"pollin error keyboard\n");
             exit(1);
         }
-        if(pollfds[0].revents & POLLHUP){
+        if(pollfd_list[0].revents & POLLHUP){
             fprintf(stderr,"pollin error keyboard\n");
             exit(1);
         }
