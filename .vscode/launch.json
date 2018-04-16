@@ -8,7 +8,7 @@
             "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "enter program name, for example ${workspaceFolder}/a.out",
+            "program": "${workspaceFolder}/Lab_1A/lab1a.c",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

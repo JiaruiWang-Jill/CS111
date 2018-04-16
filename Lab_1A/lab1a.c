@@ -11,15 +11,34 @@
 #include <signal.h> 
 
 int shell_flag = 0;
+int debug_mod = 0;
 int to_child_pipe[2]; 
 int from_child_pipe[2];
 pid_t child_pid = -1; 
 struct termios saved_attributes;
 
+void reset_terminal_mode(){
+    if(debug_mod){printf("DEBUG__in__Resetting terminal mode\n");}
+    tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
+    if(shell_flag){
+        int status = 0; 
+        if(waitpid(child_pid, &status, 0) == -1){
+            fprintf(stderr, "waitpid() failed!\n");
+            exit(1); 
+        }
+        if(WIFEXITED(status)){
+            int exit_status = WEXITSTATUS(status);
+            int num_signal = WTERMSIG(status);
+            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", num_signal, exit_status);
+            exit(0);
+        }
+    }
+}
 
 void set_terminal_mode(){
+    if(debug_mod){printf("DEBUG__in__set_terminal_mode\n");}
     struct termios tattr; 
-    char *name; 
+    //char *name; 
     //Make sure stdin is a terminal
     if(!isatty (STDIN_FILENO)){
         fprintf(stderr, "Not a terminal. \n");
@@ -34,26 +53,44 @@ void set_terminal_mode(){
     tattr.c_oflag=0;
     tattr.c_lflag=0;
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr); //TCSAFLUSH or TCSANOW ??
+    if(debug_mod){printf("DEBUG__end__set_terminal_mode\n");}
 }
 
-void reset_terminal_mode(){
-    tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
-    if(shell_flag){
-        int status = 0; 
-        if(waitpid(child_pid, &status, 0) = -1){
-            fprintf(stderr, "waitpid() failed!\n")
-            exit(1); 
-        }
-        if(WIFEXITED(status)){
-            int exit_status = WEXITSTATUS(status);
-            int num_signal = WTERMSIG(status);
-            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", num_signal, exit_status);
-            exit(0);
+void read_write(char* buf, int write_fd, int nbytes){
+    if(debug_mod){printf("DEBUG__in__read_write\n");}
+    int i; 
+    for(i=0; i < nbytes; i++){
+        switch(*(buf+i)){
+            case 0x04: //^D
+                if(shell_flag){
+                    //reset_terminal_mode(); ??
+                    close(to_child_pipe[1]);
+                }
+                else {
+                    exit(0);
+                }
+                break;
+            case 0x03: //^C 
+                kill(child_pid, SIGINT);
+                break;
+            case '\r':
+            case '\n':
+                if(write_fd == STDOUT_FILENO){
+                    char temp[2] = {'\r','\n'};
+                    write(write_fd, temp, 2);
+                } else {
+                    char temp[1] = {'\n'};
+                    write(write_fd, temp, 1);
+                }           
+                break;
+            default:
+                write(write_fd, buf+i, 1); //Check the size value !!
         }
     }
 }
 
 void read_write_shell_wrapper(){
+    if(debug_mod){printf("DEBUG__read_write_shell_wrapper\n");}
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = STDIN_FILENO;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
@@ -62,7 +99,7 @@ void read_write_shell_wrapper(){
     while(1){
         int return_value = poll(pollfd_list, 2, 0); 
         if(return_value < 0){
-            fprintf(stderr,"poll() failed!\n")
+            fprintf(stderr,"poll() failed!\n");
             exit(1);
         }
         //KEYBOARD POLLIN
@@ -86,54 +123,33 @@ void read_write_shell_wrapper(){
     }
 }
 
-
-void read_write(int buf, int write_fd, int nbytes){
-    int i; 
-    for(i=0; i < nbytes; i++){
-        switch(*(buf+i)){
-            case 0x04: //^D
-                if(shell_flag){
-                    //reset_terminal_mode(); ??
-                    close(to_child_pipe[1]);
-                }
-                else {
-                    exit(0);
-                }
-                break;
-            case 0x03: //^C 
-                kill(child_pid, SIGINT);
-                break;
-            case '\r':
-            case '\n':
-                if(write_fd == STDOUT_FILENO){
-                    char temp[2] = {'\r','\n'};
-                    write(write_fd, temp, 2);
-                } else {
-                    char temp[1] = {'\n'};
-                    wrtie(write_fd, tmp, 1);
-                }           
-                break;
-            default:
-                write(write_fd, buffer+i, 1); //Check the size value !!
-        }
+void signal_handler(int sig){
+    if(debug_mod){printf("DEBUG__in signal handler\n");}
+    if(sig == SIGPIPE){
+        if(debug_mod){printf("DEBUG__SIGPIPE caught\n");}
+        exit(0);
     }
 }
 
-int main(int argc, char **argv){
+int main(int argc, char *argv[]){
     
     int option_index = 0;
     static struct option long_option[] = {
         {"shell", no_argument, 0, 's'},
+        {"debug", no_argument, 0, 'd'},
         {0,0,0,0}
     };
     while(1){
-        int c = getopt_long(argc, argv, "s", long_option, &option_index);
+        int c = getopt_long(argc, argv, "sd", long_option, &option_index);
         if(c == -1) //No more argument 
             break; 
         switch(c){
             case 's':
-                shell_flag =1; 
+                shell_flag = 1; 
                 break; 
+            case 'd':
+                debug_mod = 1;
+                break;
             default: 
                 //INVALID ARGUMENT(S)
                
@@ -141,22 +157,33 @@ int main(int argc, char **argv){
                 break;
         };
     }
-    
+
+    if(debug_mod) printf("DEBUG__shell_flag = %d\n", shell_flag);
+    if(debug_mod) printf("DEBUG__debug_flag = %d\n", debug_mod);
+
     set_terminal_mode(); 
 
     if(!shell_flag){
+        if(debug_mod){printf("DEBUG__in_nonshell_mod\n");}
         char buffer[2048];
-        ssize_t nbytes = read(read_fd,buffer,2048);
+        ssize_t nbytes = read(STDIN_FILENO,buffer,2048);
         if(nbytes < 0){
-            fprintf(stderr, "read_write() error!\n")
+            fprintf(stderr, "read_write() error!\n");
             exit(1);
         }
-        read_write(buffer, STDOUT_FILENO, nbytes);
-        reset_terminal_mode();
-        exit(0); 
+        while(nbytes){
+            read_write(buffer, STDOUT_FILENO, nbytes);
+            nbytes = read(STDIN_FILENO,buffer,2048);
+        }
+        //if(debug_mod){printf("DEBUG__goint to rest terminal mode\n");}
+        //reset_terminal_mode();
+        if(debug_mod){printf("DEBUG__out__nonshell_mod\n");}
+        //exit(0); 
     }
 
     if(shell_flag){
+        if(debug_mod){printf("DEBUG__in_shell_mod\n");}
+        signal(SIGPIPE, signal_handler);
         if(pipe(to_child_pipe) == -1){
             fprintf(stderr, "pipe() failed!\n");
             exit(1);
@@ -202,6 +229,7 @@ int main(int argc, char **argv){
         }
     }
 
+    if(debug_mod){printf("DEBUG__end of main function\n");}
     reset_terminal_mode();
     exit(0); 
 
