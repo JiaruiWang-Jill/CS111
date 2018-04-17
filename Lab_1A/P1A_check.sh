@@ -366,7 +366,7 @@ echo ... confirming interrupt generation to shell
 	WAIT 1
 
 	EXPECT "sigint"
-	SEND "^C"
+	SEND "^C\r"
 	WAIT 1
 
 	SEND "^D"

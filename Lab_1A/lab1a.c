@@ -21,18 +21,27 @@ struct termios saved_attributes;
 void reset_terminal_mode(){
     if(debug_mod){printf("DEBUG__in__Resetting terminal mode\n");}
     tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
+    //printf("DEBUG_child pid = %d\n", child_pid);
     if(shell_flag){
         int status = 0; 
-        if(waitpid(child_pid, &status, 0) == -1){
-            fprintf(stderr, "waitpid() failed!\n");
+        if(waitpid(0, &status, 0) == -1){
+	  fprintf(stderr, "waitpid() failed! %s\n", strerror(errno));
             exit(1); 
         }
+	//else {printf("Wait pid sucess status= %d \n", status);}
         if(WIFEXITED(status)){
+	  printf("IN WIFEXITED\n");
             int exit_status = WEXITSTATUS(status);
             int num_signal = WTERMSIG(status);
-            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", num_signal, exit_status);
+            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d \n", num_signal, exit_status);
             exit(0);
         }
+	if(WIFSIGNALED(status)){
+	  int exit_status = WEXITSTATUS(status);
+	  int num_signal = WTERMSIG(status);
+	  fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d \n", num_signal, exit_status);
+	  exit(0);
+	}
     }
 }
 
@@ -126,8 +135,9 @@ void read_write_shell_wrapper(){
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
         }
         if(pollfd_list[1].revents & (POLLHUP | POLLERR)){
+	  //printf("Location pipe pohllhup or pollerr\n");
             close(from_child_pipe[0]);
-            reset_terminal_mode();
+            //reset_terminal_mode();
             exit(0);
         }
     }
@@ -241,7 +251,7 @@ int main(int argc, char *argv[]){
     }
 
     if(debug_mod){printf("DEBUG__end of main function\n");}
-    reset_terminal_mode();
+    //reset_terminal_mode();
     exit(0); 
 
 }
