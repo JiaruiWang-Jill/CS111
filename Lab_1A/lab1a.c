@@ -24,7 +24,7 @@ void reset_terminal_mode(){
     //printf("DEBUG_child pid = %d\n", child_pid);
     if(shell_flag){
         int status = 0; 
-        if(waitpid(0, &status, 0) == -1){
+        if(waitpid(child_pid, &status, 0) == -1){
 	  fprintf(stderr, "waitpid() failed! %s\n", strerror(errno));
             exit(1); 
         }
@@ -80,8 +80,9 @@ void read_write(char* buf, int write_fd, int nbytes){
                     exit(0);
                 }
                 break;
-            case 0x03: //^C 
-                kill(child_pid, SIGINT);
+            case 0x03: //^C
+	      if(shell_flag){
+                kill(child_pid, SIGINT);}
                 break;
             case '\r':
             case '\n':
