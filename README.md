@@ -1,4 +1,4 @@
 # CS111 Spring 2018 
-## Professor: Mark Kampe
-## Author: Liuyi Shi 
+__Professor: Mark Kampe__
+__Author: Liuyi Shi__ 
 The answers' correctness are not guaranteed. Use at your own risk. 
