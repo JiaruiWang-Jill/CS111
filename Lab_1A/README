@@ -1,5 +1,11 @@
 NAME: Liuyi Shi
 EMAIL: liuyi.shi@outlook.com
 ID: 904801945
+
+Files included:
+README -- README
+lab1a.c --file that contains all functions
+Makefile -- You can use it to make (make), create tarball (make dist), and clean up (make clean).
+
 Termios (set and reset terminal modes)
 https://www.gnu.org/software/libc/manual/html_node/Noncanon-Example.html
