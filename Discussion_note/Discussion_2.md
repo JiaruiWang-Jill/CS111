@@ -1,4 +1,4 @@
-# Disuccsion 1 4/13
+# Disuccsion 2 (4/13)
 ## Change to the test script 
 search for `sight`   
 add `-r` after `SEND "^C"`   
