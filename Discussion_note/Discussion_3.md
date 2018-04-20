@@ -26,3 +26,22 @@
 * __USE a BUFFER that is LARGE enough__ 
     * so you don't need to check `avaiable_out` every time 
 * `next_in` and `next_out` are next buffer address 
+
+## Big Endian and Little Endian 
+* transfer data through network use the BIG Endian 
+* Windows.. embeded system use Little Endian 
+
+### Question Realted to big and little endian (??)
+* _Popular Interview Question_ (so keep in mind)
+* Bit operation doesn't work in this problem 
+    * They all yield same results
+* Use __CASTING__
+```c
+bool IsLittleEndian(){
+    int e = 1;
+    return *((char *) &e) == 1; 
+}
+```
+## Project 4A BeagleBone Bring-Up 
+* __A PIECE OF JUNK__ (LOL)
+
