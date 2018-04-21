@@ -14,7 +14,7 @@ all: $(TARGET)
 $(TARGET): $(TARGET).c
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
 dist: 
-	tar -czvf lab1a-904801945.tar.gz $(SOURCEFILE)
+	tar -czvf lab1a-000000000.tar.gz $(SOURCEFILE)
 
 clean:
 	$(RM) $(TARGET) *.o *.txt *.tar.gz
