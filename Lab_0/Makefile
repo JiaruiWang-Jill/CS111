@@ -23,7 +23,7 @@ check: default TestALL
 	fi
 
 dist: 
-	tar -czvf lab0-904801945.tar.gz $(SOURCEFILE)
+	tar -czvf lab0-000000000.tar.gz $(SOURCEFILE)
 
 clean:
 	$(RM) $(TARGET) *.o *.txt *.tar.gz
