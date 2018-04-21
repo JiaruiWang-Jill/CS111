@@ -71,7 +71,7 @@ void read_write_wrapper(int socket_fd){
     while(1){
         int return_value = poll(pollfd_list, 2, 0); 
         if(return_value < 0){
-            fprintf(stderr,"poll() failed!-- %s\n", sterror(errno));
+            fprintf(stderr,"poll() failed! \n");
             exit(1);
         }
         if(return_value == 0) 
@@ -86,7 +86,7 @@ void read_write_wrapper(int socket_fd){
             continue; // Check this !! 
         }
         if(pollfd_list[0].revents & (POLLERR | POLLHUP)){
-            fprintf(stderr,"pollin error keyboard --%s \n", sterror(errno));
+            fprintf(stderr,"pollin error keyboard \n");
             exit(1);
         }
         
@@ -127,11 +127,11 @@ int main(int argc, char *argv[]){
             break; 
         switch(c){
             case 'p':
-                port_flag = 0;
+                port_flag = 1;
                 portno = atoi(optarg);
                 break;
             case 'l':
-                log_flag = 0;
+                log_flag = 1;
                 log_path = optarg;
                 break;
             case 'c':
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     if(socket_fd < 0){
-        frpintf(stderr, "ERROR opening socket.\n");
+        fprintf(stderr, "ERROR opening socket.\n");
         exit(1);
     }
 
