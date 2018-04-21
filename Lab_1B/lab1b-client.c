@@ -2,19 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h> 
 #include <getopt.h>
-#include <fcntl.h> 
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
 #include <termios.h>
 #include <poll.h>
-#include<sys/socket.h>  
+#include<sys/socket.h>
+#include<netdb.h>
+#include<netinet/in.h>
+
 
 //Flags 
 int port_flag = 0;
 int log_flag = 0;
 int compress_flag = 0;
-int socket_fd; 
 struct termios saved_attributes;
 
 void reset_terminal_mode(){
@@ -60,7 +61,7 @@ void read_write(char* buf, int write_fd, int nbytes){
     }
 }
 
-void read_write_wrapper(){
+void read_write_wrapper(int socket_fd){
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = STDIN_FILENO;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
@@ -84,7 +85,7 @@ void read_write_wrapper(){
             read_write(buffer_loc, socket_fd, bytes_read);
             continue; // Check this !! 
         }
-        if(pollfd_list[0].revents & (POLLERR | POLLHUP){
+        if(pollfd_list[0].revents & (POLLERR | POLLHUP)){
             fprintf(stderr,"pollin error keyboard --%s \n", sterror(errno));
             exit(1);
         }
@@ -101,11 +102,17 @@ void read_write_wrapper(){
 }
 
 
-
 int main(int argc, char *argv[]){
     
+    int socket_fd; 
+    int portno;
+    int n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server; 
+
+    char buffer[256];
+
     char* log_path = NULL;
-    char* port_num = NULL;
 
     int option_index = 0;
     static struct option long_option[] = {
@@ -121,7 +128,8 @@ int main(int argc, char *argv[]){
         switch(c){
             case 'p':
                 port_flag = 0;
-                port_num = atoi(optarg);
+                portno = atoi(optarg);
+                break;
             case 'l':
                 log_flag = 0;
                 log_path = optarg;
@@ -141,5 +149,26 @@ int main(int argc, char *argv[]){
 
     set_terminal_mode();
 
-    
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if(socket_fd < 0){
+        frpintf(stderr, "ERROR opening socket.\n");
+        exit(1);
+    }
+
+    server = gethostbyname("localhost");
+
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    memcpy((char *) &serv_addr.sin_addr.s_addr, (char*) server->h_addr, server->h_length);
+    serv_addr.sin_port = htons(portno);
+
+    // Now connect to the server 
+    if(connect(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+        fprintf(stderr,"ERROR connecting.\n");
+    }
+
+    read_write_wrapper(socket_fd);
+    exit(0);
+
 }
