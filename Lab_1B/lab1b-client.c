@@ -14,7 +14,7 @@
 int port_flag = 0;
 int log_flag = 0;
 int compress_flag = 0;
-int socket_fd;
+int socket_fd; 
 struct termios saved_attributes;
 
 void reset_terminal_mode(){
@@ -61,7 +61,6 @@ void read_write(char* buf, int write_fd, int nbytes){
 }
 
 void read_write_wrapper(){
-
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = STDIN_FILENO;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
@@ -101,6 +100,8 @@ void read_write_wrapper(){
     }
 }
 
+
+
 int main(int argc, char *argv[]){
     
     char* log_path = NULL;
@@ -132,4 +133,13 @@ int main(int argc, char *argv[]){
                 break;
         };
     }
+
+    if(!port_flag){
+        fprintf(stderr, "ERROR--port is not specificed.\n");
+        exit(1);
+    }
+
+    set_terminal_mode();
+
+    
 }
