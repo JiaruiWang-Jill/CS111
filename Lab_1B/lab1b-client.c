@@ -108,24 +108,24 @@ void read_write_wrapper(int socket_fd){
             int bytes_read = read(STDIN_FILENO, buffer_loc, 256);
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             if(compress_flag){
-                char buffer_comp[256];
+                char buffer_comp[2048];
                 client_to_server.avail_in = bytes_read;
                 client_to_server.next_in = ( unsigned char *) buffer_loc;
-                client_to_server.avail_out = 256;
+                client_to_server.avail_out = 2048;
                 client_to_server.next_out = ( unsigned char *)buffer_comp; 
 
                 do{
                     deflate(&client_to_server, Z_SYNC_FLUSH);
                 }while(client_to_server.avail_in > 0);
 
-                read_write(buffer_comp, socket_fd, 256 - client_to_server.avail_out);
+                read_write(buffer_comp, socket_fd, 2048 - client_to_server.avail_out);
                 if(log_flag){
                     char num_bytes[20];
-					sprintf(num_bytes, "%d", 256 - client_to_server.avail_out);
+					sprintf(num_bytes, "%d", 2048 - client_to_server.avail_out);
 					write(logFD, sending_prefix, strlen(sending_prefix));
 					write(logFD, num_bytes, strlen(num_bytes));
 					write(logFD, sending_end, strlen(sending_end));
-					write(logFD, buffer_comp, 256 - client_to_server.avail_out);
+					write(logFD, buffer_comp, 2048 - client_to_server.avail_out);
 					write(logFD, &newline, 1);
                 }
             }
@@ -152,8 +152,8 @@ void read_write_wrapper(int socket_fd){
         
         // Socket has output to read POLLIN 
         if(pollfd_list[1].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 2048);
             if(bytes_read == 0){
                 break;
             }

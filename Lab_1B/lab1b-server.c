@@ -92,8 +92,8 @@ void read_write_shell_wrapper(int socketfd){
         if(return_value == 0) continue; 
         //socketfd POLLIN
         if(pollfd_list[0].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(socketfd, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(socketfd, buffer_loc, 2048);
             if(compress_flag){
                 char buffer_comp[2048];
                 client_to_server.avail_in = bytes_read;
@@ -121,19 +121,19 @@ void read_write_shell_wrapper(int socketfd){
         }
         //shell POLLIN
         if(pollfd_list[1].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 2048);
             
             if(compress_flag){
-                char buffer_comp[256];
+                char buffer_comp[2048];
                 server_to_client.avail_in = bytes_read;
                 server_to_client.next_in = (unsigned char *) buffer_loc;
-                server_to_client.avail_out = 256;
+                server_to_client.avail_out = 2048;
                 server_to_client.next_out = (unsigned char *) buffer_comp;
                 do{
                     deflate(&server_to_client, Z_SYNC_FLUSH);
                 }while(server_to_client.avail_in > 0);
-                read_write(buffer_comp, socketfd, 256-server_to_client.avail_out);
+                read_write(buffer_comp, socketfd, 2048-server_to_client.avail_out);
             }else{
                 read_write(buffer_loc,socketfd,bytes_read);
             }
