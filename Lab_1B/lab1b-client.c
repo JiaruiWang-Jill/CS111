@@ -16,14 +16,19 @@
 #include <assert.h> 
 #include <zlib.h>
 
+#define CR '\015'
+#define LF '\012'
+char crlf[2] = {CR, LF};
+char newline = '\n';
+
 //Flags 
 int port_flag = 0;
 int log_flag = 0;
 int compress_flag = 0;
 struct termios saved_attributes;
 char* log_path = NULL;
-int logFD;
-int socket_fd;
+int logFD = -1;
+int socket_fd = -1;
 
 z_stream client_to_server;
 z_stream server_to_client; 
@@ -58,30 +63,30 @@ void read_write(char* buf, int write_fd, int nbytes){
     int i; 
     for(i=0; i < nbytes; i++){
         switch(*(buf+i)){
-            case '\r':
-            case '\n':
+            case CR:
+            case LF:
                 if(write_fd == STDOUT_FILENO){
-                    char temp[2] = {'\r','\n'};
-                    write(write_fd, temp, 2);
+                    //char temp[2] = {'\r','\n'};
+                    write(write_fd, crlf, 2);
                 } else {
-                    char temp[1] = {'\n'};
-                    write(write_fd, temp, 1);
+                    //char temp[1] = {'\n'};
+                    char lf = LF;
+                    write(write_fd, &lf, 1);
                 }           
                 break;
             default:
-                write(write_fd, buf+i, 1); 
+                write(write_fd, (buf+i), 1); 
                 
         }
     }
 }
 
 void read_write_wrapper(int socket_fd){
+    char sending_prefix[20] = "SENT ";
+	char sending_end[20] = " bytes: ";
+	char receiving_prefix[20] = "RECEIVED ";
+	char receiving_end[20] = " bytes: ";
     
-    if (log_flag) {
-        if( (logFD = creat(log_path, 0666)) == -1){
-            fprintf(stderr, "Failure to create/write to file. \n");
-        }
-    }
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = STDIN_FILENO;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
@@ -99,36 +104,42 @@ void read_write_wrapper(int socket_fd){
 
         // Keyboard has input to read POLLIN
         if(pollfd_list[0].revents & POLLIN){
-            char buffer_loc[2048];
-            int bytes_read = read(STDIN_FILENO, buffer_loc, 2048);
+            char buffer_loc[256];
+            int bytes_read = read(STDIN_FILENO, buffer_loc, 256);
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             if(compress_flag){
-                char buffer_comp[2048];
+                char buffer_comp[256];
                 client_to_server.avail_in = bytes_read;
                 client_to_server.next_in = ( unsigned char *) buffer_loc;
-                client_to_server.avail_out = 2048;
+                client_to_server.avail_out = 256;
                 client_to_server.next_out = ( unsigned char *)buffer_comp; 
 
                 do{
                     deflate(&client_to_server, Z_SYNC_FLUSH);
                 }while(client_to_server.avail_in > 0);
 
-                read_write(buffer_comp, socket_fd, 2048 - client_to_server.avail_out);
+                read_write(buffer_comp, socket_fd, 256 - client_to_server.avail_out);
                 if(log_flag){
-                    char temp_string[20];
-                    sprintf(temp_string, "SENT %d bytes: ", 2048-client_to_server.avail_out);
-                    write(logFD, &temp_string, 20);
-                    write(logFD, &buffer_comp, 2048-client_to_server.avail_out);
-                    write(logFD, "\n", sizeof(char));
+                    char num_bytes[20];
+					sprintf(num_bytes, "%d", 256 - client_to_server.avail_out);
+					write(logFD, sending_prefix, strlen(sending_prefix));
+					write(logFD, num_bytes, strlen(num_bytes));
+					write(logFD, sending_end, strlen(sending_end));
+					write(logFD, buffer_comp, 256 - client_to_server.avail_out);
+					write(logFD, &newline, 1);
                 }
             }
             else {
-                if(log_flag){
-                    write(logFD, "SENT 1 bytes: ", 14);
-                    write(logFD, &buffer_loc, sizeof(char));
-                    write(logFD, "\n", sizeof(char));
-                }
                 read_write(buffer_loc, socket_fd, bytes_read);
+                if(log_flag){
+                    char num_bytes[20];
+					sprintf(num_bytes, "%d", bytes_read);
+					write(logFD, sending_prefix, strlen(sending_prefix));
+					write(logFD, num_bytes, strlen(num_bytes));
+					write(logFD, sending_end, strlen(sending_end));
+					write(logFD, buffer_loc, bytes_read);
+					write(logFD, &newline, 1);
+                }
             }
             
             
@@ -141,8 +152,8 @@ void read_write_wrapper(int socket_fd){
         
         // Socket has output to read POLLIN 
         if(pollfd_list[1].revents & POLLIN){
-            char buffer_loc[2048];
-            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 2048);
+            char buffer_loc[256];
+            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
             if(bytes_read == 0){
                 break;
             }
@@ -163,12 +174,14 @@ void read_write_wrapper(int socket_fd){
                 read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             }
             if(log_flag){
-                char temp[20];
-                sprintf(temp, "RECEIVED %d bytes: ", bytes_read);
-                write(logFD, &temp, 20);
-                write(logFD, &buffer_loc, bytes_read);
-                write(logFD, "\n", sizeof(char));
-            }
+                    char num_bytes[20];
+					sprintf(num_bytes, "%d", bytes_read);
+					write(logFD, receiving_prefix, strlen(receiving_prefix));
+					write(logFD, num_bytes, strlen(num_bytes));
+					write(logFD, receiving_end, strlen(receiving_end));
+					write(logFD, buffer_loc, bytes_read);
+					write(logFD, &newline, 1);
+                }
             
             
             
@@ -182,7 +195,7 @@ void read_write_wrapper(int socket_fd){
 int main(int argc, char *argv[]){
     
      
-    int portno;
+    int portno = 0;
     //int n;
     struct sockaddr_in serv_addr;
     struct hostent *server; 
@@ -211,6 +224,10 @@ int main(int argc, char *argv[]){
                 log_flag = 1;
                 log_path = optarg;
                 
+                 if( (logFD = creat(log_path, 0666)) == -1){
+                     fprintf(stderr, "Failure to create/write to file. \n");
+                }
+    
                 break;
             case 'c':
                 compress_flag = 1;
@@ -230,6 +247,8 @@ int main(int argc, char *argv[]){
                 }
                 break;
             default:
+                fprintf(stderr, "Error in arguments.\n");
+				exit(1);
                 break;
         };
     }

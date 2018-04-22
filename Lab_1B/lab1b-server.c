@@ -15,10 +15,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#define CR '\015' //carriage return
+#define LF '\012' //line feed
+
 z_stream client_to_server;
 z_stream server_to_client; 
 int sockfd, newsockfd, portno;
 
+char crlf[2] = {CR, LF};
 //Flags 
 int port_flag = 0;
 int compress_flag = 0;
@@ -36,7 +40,7 @@ void exit_shell(){
 }
 
 void read_write(char* buf, int write_fd, int nbytes){
-    if(debug_mod){printf("DEBUG__in__read_write\n");}
+    //if(debug_mod){printf("DEBUG__in__read_write\n");}
     int i; 
     for(i=0; i < nbytes; i++){
         switch(*(buf+i)){
@@ -46,14 +50,15 @@ void read_write(char* buf, int write_fd, int nbytes){
             case 0x03: //^C
                 kill(child_pid, SIGINT);
                 break;
-            case '\r':
-            case '\n':
+            case CR:
+            case LF:
                 if(write_fd == STDOUT_FILENO){
-                    char temp[2] = {'\r','\n'};
-                    write(write_fd, temp, 2);
+                    //char temp[2] = {'\r','\n'};
+                    write(write_fd, crlf, 2);
                 } else {
-                    char temp[1] = {'\n'};
-                    write(write_fd, temp, 1);
+                    //char temp[1] = {'\n'};
+                    char lf = LF;
+                    write(write_fd, &lf, 1);
                 }           
                 break;
             default:
@@ -63,7 +68,7 @@ void read_write(char* buf, int write_fd, int nbytes){
 }
 
 void read_write_shell_wrapper(int socketfd){
-    if(debug_mod){printf("DEBUG__read_write_shell_wrapper\n");}
+    //if(debug_mod){printf("DEBUG__read_write_shell_wrapper\n");}
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = socketfd;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
@@ -87,8 +92,8 @@ void read_write_shell_wrapper(int socketfd){
         if(return_value == 0) continue; 
         //socketfd POLLIN
         if(pollfd_list[0].revents & POLLIN){
-            char buffer_loc[2048];
-            int bytes_read = read(socketfd, buffer_loc, 2048);
+            char buffer_loc[256];
+            int bytes_read = read(socketfd, buffer_loc, 256);
             if(compress_flag){
                 char buffer_comp[2048];
                 client_to_server.avail_in = bytes_read;
@@ -116,19 +121,19 @@ void read_write_shell_wrapper(int socketfd){
         }
         //shell POLLIN
         if(pollfd_list[1].revents & POLLIN){
-            char buffer_loc[2048];
-            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 2048);
+            char buffer_loc[256];
+            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
             
             if(compress_flag){
-                char buffer_comp[2048];
+                char buffer_comp[256];
                 server_to_client.avail_in = bytes_read;
                 server_to_client.next_in = (unsigned char *) buffer_loc;
-                server_to_client.avail_out = 2048;
+                server_to_client.avail_out = 256;
                 server_to_client.next_out = (unsigned char *) buffer_comp;
                 do{
                     deflate(&server_to_client, Z_SYNC_FLUSH);
                 }while(server_to_client.avail_in > 0);
-                read_write(buffer_comp, socketfd, 2048-server_to_client.avail_out);
+                read_write(buffer_comp, socketfd, 256-server_to_client.avail_out);
             }else{
                 read_write(buffer_loc,socketfd,bytes_read);
             }
@@ -153,10 +158,7 @@ void signal_handler(int sig){
 int main(int argc, char *argv[]){
     
     
-    unsigned int clilen;
-    //char buffer[256];
-    struct sockaddr_in serv_addr, cli_addr;
-    //int n; 
+    
 
     //char* port_num = NULL;
 
@@ -197,6 +199,7 @@ int main(int argc, char *argv[]){
                 debug_mod = 1;
                 break;
             default: 
+                fprintf(stderr, "Error in arguments.\n");
                 exit(1);
                 break;
         };
@@ -208,6 +211,10 @@ int main(int argc, char *argv[]){
     }
 
     // Socket
+    unsigned int clilen;
+    //char buffer[256];
+    struct sockaddr_in serv_addr, cli_addr;
+    //int n; 
     // First call to socket() function 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd < 0){
@@ -228,7 +235,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    listen(sockfd, 5);
+    listen(sockfd, 8); //8 or 5 ??
     clilen = sizeof(cli_addr);
 
     newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
@@ -239,9 +246,9 @@ int main(int argc, char *argv[]){
     }
     
     // Shell
-    if(shell_flag){
-        if(debug_mod){printf("DEBUG__in_shell_mod\n");}
-        signal(SIGPIPE, signal_handler);
+    
+        
+        
         if(pipe(to_child_pipe) == -1){
             fprintf(stderr, "pipe() failed!\n");
             exit(1);
@@ -250,7 +257,9 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "pipe() failed!\n");
             exit(1);
         }
-        child_pid = fork(); 
+    signal(SIGPIPE, signal_handler);
+    
+    child_pid = fork(); 
 
         if(child_pid >0){ //parent process 
             close(to_child_pipe[0]);
@@ -282,7 +291,7 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "fork() failed!\n");
             exit(1); 
         }
-    }
+    
     if(compress_flag){
         inflateEnd(&client_to_server);
         deflateEnd(&server_to_client);
