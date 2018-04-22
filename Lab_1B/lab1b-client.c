@@ -78,7 +78,9 @@ void read_write(char* buf, int write_fd, int nbytes){
 void read_write_wrapper(int socket_fd){
     
     if (log_flag) {
-        logFD = creat(log_path, 0666);
+        if( (logFD = creat(log_path, 0666)) == -1){
+            fprintf(stderr, "Failure to create/write to file. \n");
+        }
     }
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = STDIN_FILENO;
@@ -97,8 +99,8 @@ void read_write_wrapper(int socket_fd){
 
         // Keyboard has input to read POLLIN
         if(pollfd_list[0].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(STDIN_FILENO, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(STDIN_FILENO, buffer_loc, 2048);
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             if(compress_flag){
                 char buffer_comp[2048];
@@ -114,9 +116,9 @@ void read_write_wrapper(int socket_fd){
                 read_write(buffer_comp, socket_fd, 2048 - client_to_server.avail_out);
                 if(log_flag){
                     char temp_string[20];
-                    sprintf(temp_string, "SENT %d bytes: ", 256-client_to_server.avail_out);
-                    write(logFD, "SENT 1 bytes: ", 14);
-                    write(logFD, &buffer_comp, 256-client_to_server.avail_out);
+                    sprintf(temp_string, "SENT %d bytes: ", 2048-client_to_server.avail_out);
+                    write(logFD, &temp_string, 20);
+                    write(logFD, &buffer_comp, 2048-client_to_server.avail_out);
                     write(logFD, "\n", sizeof(char));
                 }
             }
@@ -130,7 +132,7 @@ void read_write_wrapper(int socket_fd){
             }
             
             
-            continue;  
+    
         }
         if(pollfd_list[0].revents & (POLLERR | POLLHUP)){
             fprintf(stderr,"pollin error keyboard \n");
@@ -139,8 +141,11 @@ void read_write_wrapper(int socket_fd){
         
         // Socket has output to read POLLIN 
         if(pollfd_list[1].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 2048);
+            if(bytes_read == 0){
+                break;
+            }
             if(compress_flag){
                 char buffer_comp[2048];
                 server_to_client.avail_in = bytes_read;
@@ -153,16 +158,18 @@ void read_write_wrapper(int socket_fd){
                 } while(server_to_client.avail_in > 0);
 
                 read_write(buffer_comp, STDOUT_FILENO,2048-server_to_client.avail_out);
+                
             } else {
                 read_write(buffer_loc,STDOUT_FILENO,bytes_read);
             }
             if(log_flag){
-                    char temp[20];
-                    sprintf(temp, "RECEIVED %d bytes: ", bytes_read);
-                    write(logFD, &temp, 20);
-                    write(logFD, &buffer_loc, bytes_read);
-                    write(logFD, "\n", sizeof(char));
-                }
+                char temp[20];
+                sprintf(temp, "RECEIVED %d bytes: ", bytes_read);
+                write(logFD, &temp, 20);
+                write(logFD, &buffer_loc, bytes_read);
+                write(logFD, "\n", sizeof(char));
+            }
+            
             
             
         }
@@ -203,6 +210,7 @@ int main(int argc, char *argv[]){
             case 'l':
                 log_flag = 1;
                 log_path = optarg;
+                
                 break;
             case 'c':
                 compress_flag = 1;
@@ -253,6 +261,10 @@ int main(int argc, char *argv[]){
     }
 
     read_write_wrapper(socket_fd);
+    if(compress_flag){
+        inflateEnd(&server_to_client);
+        deflateEnd(&client_to_server);
+    }
     exit(0);
 
 }

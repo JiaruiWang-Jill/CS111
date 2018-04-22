@@ -75,8 +75,8 @@ void read_write_shell_wrapper(int socketfd){
         if(return_value == 0) continue; 
         //socketfd POLLIN
         if(pollfd_list[0].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(socketfd, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(socketfd, buffer_loc, 2048);
             if(compress_flag){
                 char buffer_comp[2048];
                 client_to_server.avail_in = bytes_read;
@@ -86,6 +86,7 @@ void read_write_shell_wrapper(int socketfd){
                 do{
                     inflate(&client_to_server, Z_SYNC_FLUSH);
                 }while(client_to_server.avail_in > 0);
+                //read_write(buffer_comp, STDOUT_FILENO, 2048-client_to_server.avail_out);
                 read_write(buffer_comp, to_child_pipe[1], 2048-client_to_server.avail_out);
             }else{
                 //read_write(buffer_loc,STDOUT_FILENO,bytes_read);
@@ -103,8 +104,8 @@ void read_write_shell_wrapper(int socketfd){
         }
         //shell POLLIN
         if(pollfd_list[1].revents & POLLIN){
-            char buffer_loc[256];
-            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
+            char buffer_loc[2048];
+            int bytes_read = read(pollfd_list[1].fd, buffer_loc, 2048);
             
             if(compress_flag){
                 char buffer_comp[2048];
@@ -113,7 +114,7 @@ void read_write_shell_wrapper(int socketfd){
                 server_to_client.avail_out = 2048;
                 server_to_client.next_out = (unsigned char *) buffer_comp;
                 do{
-                    inflate(&server_to_client, Z_SYNC_FLUSH);
+                    deflate(&server_to_client, Z_SYNC_FLUSH);
                 }while(server_to_client.avail_in > 0);
                 read_write(buffer_comp, socketfd, 2048-server_to_client.avail_out);
             }else{
@@ -266,7 +267,10 @@ int main(int argc, char *argv[]){
             exit(1); 
         }
     }
-
+    if(compress_flag){
+        inflateEnd(&client_to_server);
+        deflateEnd(&server_to_client);
+    }
 
     if(debug_mod){printf("DEBUG__end of main function\n");}
     exit(0); 
