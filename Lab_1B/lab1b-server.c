@@ -10,7 +10,11 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <zlib.h>
+#include <assert.h> 
 
+z_stream client_to_server;
+z_stream server_to_client; 
 
 //Flags 
 int port_flag = 0;
@@ -73,8 +77,21 @@ void read_write_shell_wrapper(int socketfd){
         if(pollfd_list[0].revents & POLLIN){
             char buffer_loc[256];
             int bytes_read = read(socketfd, buffer_loc, 256);
-            //read_write(buffer_loc,STDOUT_FILENO,bytes_read);
-            read_write(buffer_loc, to_child_pipe[1], bytes_read);
+            if(compress_flag){
+                char buffer_comp[2048];
+                client_to_server.avail_in = bytes_read;
+                client_to_server.next_in = (unsigned char *) buffer_loc;
+                client_to_server.avail_out = 2048;
+                client_to_server.next_out = (unsigned char *) buffer_comp;
+                do{
+                    inflate(&client_to_server, Z_SYNC_FLUSH);
+                }while(client_to_server.avail_in > 0);
+                read_write(buffer_comp, to_child_pipe[1], 2048-client_to_server.avail_out);
+            }else{
+                //read_write(buffer_loc,STDOUT_FILENO,bytes_read);
+                read_write(buffer_loc, to_child_pipe[1], bytes_read);
+            }
+            
         }
         if(pollfd_list[0].revents & POLLERR){
             fprintf(stderr,"pollin error keyboard\n");
@@ -88,7 +105,20 @@ void read_write_shell_wrapper(int socketfd){
         if(pollfd_list[1].revents & POLLIN){
             char buffer_loc[256];
             int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
-            read_write(buffer_loc,socketfd,bytes_read);
+            
+            if(compress_flag){
+                char buffer_comp[2048];
+                server_to_client.avail_in = bytes_read;
+                server_to_client.next_in = (unsigned char *) buffer_loc;
+                server_to_client.avail_out = 2048;
+                server_to_client.next_out = (unsigned char *) buffer_comp;
+                do{
+                    inflate(&server_to_client, Z_SYNC_FLUSH);
+                }while(server_to_client.avail_in > 0);
+                read_write(buffer_comp, socketfd, 2048-server_to_client.avail_out);
+            }else{
+                read_write(buffer_loc,socketfd,bytes_read);
+            }
         }
         if(pollfd_list[1].revents & (POLLHUP | POLLERR)){
 	  //printf("Location pipe pohllhup or pollerr\n");
@@ -136,6 +166,20 @@ int main(int argc, char *argv[]){
                 break;
             case 'c':
                 compress_flag = 1;
+                server_to_client.zalloc = Z_NULL;
+                server_to_client.zfree = Z_NULL;
+                server_to_client.opaque = Z_NULL;
+                if(deflateInit(&server_to_client, Z_DEFAULT_COMPRESSION) != Z_OK){
+                    fprintf(stderr, "ERROR- Failure to deflate server message on server \n");
+                    exit(1);
+                }
+                client_to_server.zalloc = Z_NULL;
+                client_to_server.zfree = Z_NULL;
+                client_to_server.opaque = Z_NULL;
+                if(inflateInit(&client_to_server) != Z_OK ){
+                    fprintf(stderr, "ERROR- Failure to inflate client message on server\n");
+                    exit(1);
+                }
                 break;
             case 'd':
                 debug_mod = 1;

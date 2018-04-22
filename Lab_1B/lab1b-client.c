@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h> 
+#include <zlib.h>
 
 //Flags 
 int port_flag = 0;
@@ -20,8 +22,15 @@ int log_flag = 0;
 int compress_flag = 0;
 struct termios saved_attributes;
 char* log_path = NULL;
+int logFD;
+int socket_fd;
+
+z_stream client_to_server;
+z_stream server_to_client; 
 
 void reset_terminal_mode(){
+    close(logFD);
+    close(socket_fd);
     tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
     exit(0);
 }
@@ -67,7 +76,7 @@ void read_write(char* buf, int write_fd, int nbytes){
 }
 
 void read_write_wrapper(int socket_fd){
-    int logFD;
+    
     if (log_flag) {
         logFD = creat(log_path, 0666);
     }
@@ -91,12 +100,35 @@ void read_write_wrapper(int socket_fd){
             char buffer_loc[256];
             int bytes_read = read(STDIN_FILENO, buffer_loc, 256);
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
-            if(log_flag){
+            if(compress_flag){
+                char buffer_comp[2048];
+                client_to_server.avail_in = bytes_read;
+                client_to_server.next_in = ( unsigned char *) buffer_loc;
+                client_to_server.avail_out = 2048;
+                client_to_server.next_out = ( unsigned char *)buffer_comp; 
+
+                do{
+                    deflate(&client_to_server, Z_SYNC_FLUSH);
+                }while(client_to_server.avail_in > 0);
+
+                read_write(buffer_comp, socket_fd, 2048 - client_to_server.avail_out);
+                if(log_flag){
+                    char temp_string[20];
+                    sprintf(temp_string, "SENT %d bytes: ", 256-client_to_server.avail_out);
+                    write(logFD, "SENT 1 bytes: ", 14);
+                    write(logFD, &buffer_comp, 256-client_to_server.avail_out);
+                    write(logFD, "\n", sizeof(char));
+                }
+            }
+            else {
+                if(log_flag){
                     write(logFD, "SENT 1 bytes: ", 14);
                     write(logFD, &buffer_loc, sizeof(char));
                     write(logFD, "\n", sizeof(char));
                 }
-            read_write(buffer_loc, socket_fd, bytes_read);
+                read_write(buffer_loc, socket_fd, bytes_read);
+            }
+            
             
             continue;  
         }
@@ -109,6 +141,21 @@ void read_write_wrapper(int socket_fd){
         if(pollfd_list[1].revents & POLLIN){
             char buffer_loc[256];
             int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
+            if(compress_flag){
+                char buffer_comp[2048];
+                server_to_client.avail_in = bytes_read;
+                server_to_client.next_in = (unsigned char *) buffer_loc;
+                server_to_client.avail_out = 2048;
+                server_to_client.next_out = (unsigned char *) buffer_comp;
+
+                do{
+                    inflate(&server_to_client, Z_SYNC_FLUSH);
+                } while(server_to_client.avail_in > 0);
+
+                read_write(buffer_comp, STDOUT_FILENO,2048-server_to_client.avail_out);
+            } else {
+                read_write(buffer_loc,STDOUT_FILENO,bytes_read);
+            }
             if(log_flag){
                     char temp[20];
                     sprintf(temp, "RECEIVED %d bytes: ", bytes_read);
@@ -116,7 +163,7 @@ void read_write_wrapper(int socket_fd){
                     write(logFD, &buffer_loc, bytes_read);
                     write(logFD, "\n", sizeof(char));
                 }
-            read_write(buffer_loc,STDOUT_FILENO,bytes_read);
+            
             
         }
         if(pollfd_list[1].revents & (POLLHUP | POLLERR))
@@ -127,7 +174,7 @@ void read_write_wrapper(int socket_fd){
 
 int main(int argc, char *argv[]){
     
-    int socket_fd; 
+     
     int portno;
     int n;
     struct sockaddr_in serv_addr;
@@ -158,7 +205,21 @@ int main(int argc, char *argv[]){
                 log_path = optarg;
                 break;
             case 'c':
-                compress_flag = 0;
+                compress_flag = 1;
+                client_to_server.zalloc = Z_NULL;
+                client_to_server.zfree = Z_NULL;
+                client_to_server.opaque = Z_NULL;
+                if(deflateInit(&client_to_server, Z_DEFAULT_COMPRESSION) != Z_OK){
+                    fprintf(stderr, "ERROR- Failure to deflate client message on client \n");
+                    exit(1);
+                }
+                server_to_client.zalloc = Z_NULL;
+                server_to_client.zfree = Z_NULL;
+                server_to_client.opaque = Z_NULL;
+                if(inflateInit(&server_to_client) != Z_OK ){
+                    fprintf(stderr, "ERROR- Failure to inflate server message on client\n");
+                    exit(1);
+                }
                 break;
             default:
                 break;
