@@ -29,30 +29,10 @@ int to_child_pipe[2];
 int from_child_pipe[2];
 pid_t child_pid = -1; 
 
-void close_fd(){
-  close(to_child_pipe[1]);
-  close(from_child_pipe[2]);
-
-  close(newsockfd);
-  close(sockfd);
-}
-
-void shutdown_process(){
-  close_fd();
-  kill(child_pid, SIGINT);  
-  int status;
-  if(waitpid(child_pid, &status, 0) == -1){
-    fprintf(stderr, "error: waitpid failed. \n");
-    exit(1);
-  }
-
-    const int exits = WEXITSTATUS(status);
-    const int ss = WTERMSIG(status);
-
-    fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", exits, ss);
-
-    exit(0);
-  
+void exit_shell(){
+    int status;
+    waitpid(child_pid, &status, 0);
+    fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", WIFSIGNALED(status), WEXITSTATUS(status));
 }
 
 void read_write(char* buf, int write_fd, int nbytes){
@@ -61,11 +41,10 @@ void read_write(char* buf, int write_fd, int nbytes){
     for(i=0; i < nbytes; i++){
         switch(*(buf+i)){
             case 0x04: //^D
-	      shutdown_process();
+	            close(to_child_pipe[1]);
                 break;
             case 0x03: //^C
-
-		shutdown_process();
+                kill(child_pid, SIGINT);
                 break;
             case '\r':
             case '\n':
@@ -90,7 +69,16 @@ void read_write_shell_wrapper(int socketfd){
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
     pollfd_list[1].fd = from_child_pipe[0];
     pollfd_list[1].events = POLLIN | POLLHUP | POLLERR;
+    int status; 
     while(1){
+        if(waitpid(child_pid, &status, WNOHANG) != 0){
+            close(sockfd);
+            close(newsockfd);
+            close(from_child_pipe[0]);
+            close(to_child_pipe[1]);
+            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", WIFSIGNALED(status), WEXITSTATUS(status));
+            exit(0);
+        }
         int return_value = poll(pollfd_list, 2, 0); 
         if(return_value < 0){
             fprintf(stderr,"poll() failed!\n");
@@ -147,19 +135,17 @@ void read_write_shell_wrapper(int socketfd){
         }
         if(pollfd_list[1].revents & (POLLHUP | POLLERR)){
 	  //printf("Location pipe pohllhup or pollerr\n");
-            fprintf(stderr, "error: received POLLHUP|POLLERR.\n"); // Check this ??
-            close(from_child_pipe[0]);
-            //reset_terminal_mode();
-            exit(0);
+            break;
         }
     }
 }
 
 void signal_handler(int sig){
-    if(debug_mod){printf("DEBUG__in signal handler\n");}
     if(sig == SIGPIPE){
-      shutdown_process();
-        if(debug_mod){printf("DEBUG__SIGPIPE caught\n");}
+        close(from_child_pipe[0]);
+        close(to_child_pipe[1]);
+        kill(child_pid,SIGKILL);
+        exit_shell();
         exit(0);
     }
 }
@@ -270,7 +256,11 @@ int main(int argc, char *argv[]){
             close(to_child_pipe[0]);
             close(from_child_pipe[1]);
             read_write_shell_wrapper(newsockfd);
-	    shutdown_process();
+            close(sockfd);
+            close(newsockfd);
+            close(from_child_pipe[0]);
+            close(to_child_pipe[1]);
+            exit_shell();
         } else if (child_pid == 0) { //child process
             close(to_child_pipe[1]);
             close(from_child_pipe[0]);
