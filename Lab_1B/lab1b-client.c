@@ -7,16 +7,19 @@
 #include <string.h>
 #include <termios.h>
 #include <poll.h>
-#include<sys/socket.h>
-#include<netdb.h>
-#include<netinet/in.h>
-
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 //Flags 
 int port_flag = 0;
 int log_flag = 0;
 int compress_flag = 0;
 struct termios saved_attributes;
+char* log_path = NULL;
 
 void reset_terminal_mode(){
     tcsetattr(STDIN_FILENO, TCSANOW, &saved_attributes);
@@ -42,6 +45,7 @@ void set_terminal_mode(){
 }
 
 void read_write(char* buf, int write_fd, int nbytes){
+    
     int i; 
     for(i=0; i < nbytes; i++){
         switch(*(buf+i)){
@@ -57,11 +61,16 @@ void read_write(char* buf, int write_fd, int nbytes){
                 break;
             default:
                 write(write_fd, buf+i, 1); 
+                
         }
     }
 }
 
 void read_write_wrapper(int socket_fd){
+    int logFD;
+    if (log_flag) {
+        logFD = creat(log_path, 0666);
+    }
     struct pollfd pollfd_list[2];
     pollfd_list[0].fd = STDIN_FILENO;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
@@ -82,8 +91,14 @@ void read_write_wrapper(int socket_fd){
             char buffer_loc[256];
             int bytes_read = read(STDIN_FILENO, buffer_loc, 256);
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
+            if(log_flag){
+                    write(logFD, "SENT 1 bytes: ", 14);
+                    write(logFD, &buffer_loc, sizeof(char));
+                    write(logFD, "\n", sizeof(char));
+                }
             read_write(buffer_loc, socket_fd, bytes_read);
-            continue; // Check this !! 
+            
+            continue;  
         }
         if(pollfd_list[0].revents & (POLLERR | POLLHUP)){
             fprintf(stderr,"pollin error keyboard \n");
@@ -94,7 +109,15 @@ void read_write_wrapper(int socket_fd){
         if(pollfd_list[1].revents & POLLIN){
             char buffer_loc[256];
             int bytes_read = read(pollfd_list[1].fd, buffer_loc, 256);
+            if(log_flag){
+                    char temp[20];
+                    sprintf(temp, "RECEIVED %d bytes: ", bytes_read);
+                    write(logFD, &temp, 20);
+                    write(logFD, &buffer_loc, bytes_read);
+                    write(logFD, "\n", sizeof(char));
+                }
             read_write(buffer_loc,STDOUT_FILENO,bytes_read);
+            
         }
         if(pollfd_list[1].revents & (POLLHUP | POLLERR))
             exit(0);
@@ -112,7 +135,7 @@ int main(int argc, char *argv[]){
 
     char buffer[256];
 
-    char* log_path = NULL;
+    
 
     int option_index = 0;
     static struct option long_option[] = {

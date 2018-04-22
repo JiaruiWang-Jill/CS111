@@ -7,9 +7,9 @@
 #include <string.h>
 #include <termios.h>
 #include <poll.h>
-#include<sys/socket.h>
-#include<netdb.h>
-#include<netinet/in.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
 
 
 //Flags 
@@ -58,7 +58,7 @@ void read_write(char* buf, int write_fd, int nbytes){
 void read_write_shell_wrapper(int socketfd){
     if(debug_mod){printf("DEBUG__read_write_shell_wrapper\n");}
     struct pollfd pollfd_list[2];
-    pollfd_list[0].fd = STDIN_FILENO;
+    pollfd_list[0].fd = socketfd;
     pollfd_list[0].events = POLLIN | POLLHUP | POLLERR; 
     pollfd_list[1].fd = from_child_pipe[0];
     pollfd_list[1].events = POLLIN | POLLHUP | POLLERR;
