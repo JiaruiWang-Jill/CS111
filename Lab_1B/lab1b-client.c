@@ -183,11 +183,11 @@ int main(int argc, char *argv[]){
     
      
     int portno;
-    int n;
+    //int n;
     struct sockaddr_in serv_addr;
     struct hostent *server; 
 
-    char buffer[256];
+    //char buffer[256];
 
     
 

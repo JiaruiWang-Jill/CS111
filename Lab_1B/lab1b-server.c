@@ -11,10 +11,13 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <zlib.h>
-#include <assert.h> 
+#include <assert.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 z_stream client_to_server;
 z_stream server_to_client; 
+int sockfd, newsockfd, portno;
 
 //Flags 
 int port_flag = 0;
@@ -26,22 +29,43 @@ int to_child_pipe[2];
 int from_child_pipe[2];
 pid_t child_pid = -1; 
 
+void close_fd(){
+  close(to_child_pipe[1]);
+  close(from_child_pipe[2]);
+
+  close(newsockfd);
+  close(sockfd);
+}
+
+void shutdown_process(){
+  close_fd();
+  kill(child_pid, SIGINT);  
+  int status;
+  if(waitpid(child_pid, &status, 0) == -1){
+    fprintf(stderr, "error: waitpid failed. \n");
+    exit(1);
+  }
+
+    const int exits = WEXITSTATUS(status);
+    const int ss = WTERMSIG(status);
+
+    fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", exits, ss);
+
+    exit(0);
+  
+}
+
 void read_write(char* buf, int write_fd, int nbytes){
     if(debug_mod){printf("DEBUG__in__read_write\n");}
     int i; 
     for(i=0; i < nbytes; i++){
         switch(*(buf+i)){
             case 0x04: //^D
-                if(shell_flag){
-                    close(to_child_pipe[1]);
-                }
-                else {
-                    exit(0);
-                }
+	      shutdown_process();
                 break;
             case 0x03: //^C
-	      if(shell_flag){
-                kill(child_pid, SIGINT);}
+
+		shutdown_process();
                 break;
             case '\r':
             case '\n':
@@ -134,6 +158,7 @@ void read_write_shell_wrapper(int socketfd){
 void signal_handler(int sig){
     if(debug_mod){printf("DEBUG__in signal handler\n");}
     if(sig == SIGPIPE){
+      shutdown_process();
         if(debug_mod){printf("DEBUG__SIGPIPE caught\n");}
         exit(0);
     }
@@ -141,13 +166,13 @@ void signal_handler(int sig){
 
 int main(int argc, char *argv[]){
     
-    int sockfd, newsockfd, portno; 
+    
     unsigned int clilen;
-    char buffer[256];
+    //char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    int n; 
+    //int n; 
 
-    char* port_num = NULL;
+    //char* port_num = NULL;
 
     int option_index = 0;
     static struct option long_option[] = {
@@ -245,6 +270,7 @@ int main(int argc, char *argv[]){
             close(to_child_pipe[0]);
             close(from_child_pipe[1]);
             read_write_shell_wrapper(newsockfd);
+	    shutdown_process();
         } else if (child_pid == 0) { //child process
             close(to_child_pipe[1]);
             close(from_child_pipe[0]);
@@ -271,6 +297,7 @@ int main(int argc, char *argv[]){
         inflateEnd(&client_to_server);
         deflateEnd(&server_to_client);
     }
+
 
     if(debug_mod){printf("DEBUG__end of main function\n");}
     exit(0); 
