@@ -111,7 +111,7 @@ void read_write_shell_wrapper(int socketfd){
             exit(1);
         }
         if(pollfd_list[0].revents & POLLHUP){
-            fprintf(stderr,"pollin error keyboard\n");
+            fprintf(stderr,"pollin pollhup keyboard\n");
             exit(1);
         }
         //shell POLLIN
