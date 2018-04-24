@@ -1,6 +1,27 @@
 NAME: Liuyi Shi 
 EMAIL: liuyi.shi@outlook.com
 ID: 904801945
+SLIPDAYS: 1
+
+The package contains four files:
+README:
+	This file 
+lab1b-client.c
+	Client part
+	--log=filename <- can be used to log all in and out traffic
+	--port=port# <- specific the port you are sending to
+	--compress <- to enable the compress option during data trasmitting 
+
+lab1b-server.c
+	Server part
+	--port=port# <- specific the port the server will listen to
+	--compress <- to enable the compress option during data transmitting 
+
+Makefile: It contains
+	  default : complies all files
+	  clean : clean up all files 
+	  dist : make a tarball file 
+
 Socket Reference: 
 https://www.tutorialspoint.com/unix_sockets/socket_client_example.htm
 https://www.tutorialspoint.com/unix_sockets/socket_server_example.htm

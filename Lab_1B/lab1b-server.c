@@ -1,3 +1,7 @@
+// NAME: Liuyi Shi
+// EMAIL: liuyi.shi@outlook.com
+// ID: 904801945
+
 #include <unistd.h> 
 #include <stdio.h>
 #include <stdlib.h> 
