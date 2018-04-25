@@ -20,9 +20,9 @@
 #include <assert.h> 
 #include <zlib.h>
 
-#define CR '\015'
-#define LF '\012'
-char crlf[2] = {CR, LF};
+#define Carr_Return '\015'
+#define Line_Feed '\012'
+char crlf[2] = {Carr_Return, Line_Feed};
 char newline = '\n';
 
 //Flags 
@@ -67,14 +67,14 @@ void read_write(char* buf, int write_fd, int nbytes){
     int i; 
     for(i=0; i < nbytes; i++){
         switch(*(buf+i)){
-            case CR:
-            case LF:
+            case Carr_Return:
+            case Line_Feed:
                 if(write_fd == STDOUT_FILENO){
                     //char temp[2] = {'\r','\n'};
                     write(write_fd, crlf, 2);
                 } else {
                     //char temp[1] = {'\n'};
-                    char lf = LF;
+                    char lf = Line_Feed;
                     write(write_fd, &lf, 1);
                 }           
                 break;
@@ -86,8 +86,8 @@ void read_write(char* buf, int write_fd, int nbytes){
 }
 
 void read_write_wrapper(int socket_fd){
-    char sending_prefix[20] = "SENT ";
-	char sending_end[20] = " bytes: ";
+    char mes_pre[20] = "SENT ";
+	char mes_end[20] = " bytes: ";
 	char receiving_prefix[20] = "RECEIVED ";
 	char receiving_end[20] = " bytes: ";
     
@@ -126,9 +126,9 @@ void read_write_wrapper(int socket_fd){
                 if(log_flag){
                     char num_bytes[20];
 					sprintf(num_bytes, "%d", 2048 - client_to_server.avail_out);
-					write(logFD, sending_prefix, strlen(sending_prefix));
+					write(logFD, mes_pre, strlen(mes_pre));
 					write(logFD, num_bytes, strlen(num_bytes));
-					write(logFD, sending_end, strlen(sending_end));
+					write(logFD, mes_end, strlen(mes_end));
 					write(logFD, buffer_comp, 2048 - client_to_server.avail_out);
 					write(logFD, &newline, 1);
                 }
@@ -138,9 +138,9 @@ void read_write_wrapper(int socket_fd){
                 if(log_flag){
                     char num_bytes[20];
 					sprintf(num_bytes, "%d", bytes_read);
-					write(logFD, sending_prefix, strlen(sending_prefix));
+					write(logFD, mes_pre, strlen(mes_pre));
 					write(logFD, num_bytes, strlen(num_bytes));
-					write(logFD, sending_end, strlen(sending_end));
+					write(logFD, mes_end, strlen(mes_end));
 					write(logFD, buffer_loc, bytes_read);
 					write(logFD, &newline, 1);
                 }
