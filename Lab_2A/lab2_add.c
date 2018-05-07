@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
 
 // Global variables 
 long long counter = 0; 
@@ -12,7 +13,7 @@ long long my_elapsed_time_in_ns = 0;
 int num_of_iterations = 1; 
 int num_of_threads = 1;
 int  my_spin_lock = 0;
-//int opt_yield = 0;
+int opt_yield = 0;
 pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER; 
 typedef enum locks {
   NO_LOCK, MUTEX, SPIN_LOCK, COMPARE_AND_SWAP
@@ -21,6 +22,8 @@ lock_type which_lock = NO_LOCK;
 
 void add(long long *pointer, long long value){
     long long sum = *pointer + value;
+    if (opt_yield)
+        sched_yield();
     *pointer = sum;
 }
 
@@ -49,7 +52,13 @@ void* thread_function_to_run_test(){
             }
             case COMPARE_AND_SWAP:
             {
-                //__sync_val_compare_and_swap
+                long long old, new;
+                do {
+                    if (opt_yield)
+                        sched_yield();
+                    old = counter;
+                    new = old + 1;
+                } while ( __sync_val_compare_and_swap(&counter, old, new) != old);
                 break; 
             }
         }
@@ -78,7 +87,13 @@ void* thread_function_to_run_test(){
             }
             case COMPARE_AND_SWAP:
             {
-                //__sync_val_compare_and_swap
+                long long old, new;
+                do {
+                    if (opt_yield)
+                        sched_yield();
+                    old = counter;
+                    new = old - 1;
+                } while ( __sync_val_compare_and_swap(&counter, old, new) != old);
                 break; 
             }
         }
@@ -89,20 +104,27 @@ void* thread_function_to_run_test(){
 
 void print_result(){
     char* print_lock;
+    char* option_yield = "";
+    if(opt_yield){
+        option_yield = "yield-";
+    }
     switch(which_lock){
         case NO_LOCK:
-            print_lock = "add-none";
+            print_lock = "none";
             break;
         case MUTEX:
+            print_lock = "m";
             break; 
         case SPIN_LOCK: 
+            print_lock = "s";
             break; 
         case COMPARE_AND_SWAP: 
+            print_lock = "c";
             break;
     }
     int total_op = num_of_threads * num_of_iterations * 2; 
     long long average_time_per_op = my_elapsed_time_in_ns/total_op;
-    printf("%s,%d,%d,%d,%lld,%lld,%lld\n", print_lock, num_of_threads, 
+    printf("add-%s%s,%d,%d,%d,%lld,%lld,%lld\n", option_yield,print_lock, num_of_threads, 
         num_of_iterations, total_op, my_elapsed_time_in_ns, average_time_per_op, counter);
 }
 
@@ -115,10 +137,12 @@ int main(int argc, char ** argv){
     static struct option long_option[] = {
         {"threads", required_argument, 0, 't'},
         {"iterations", required_argument, 0, 'i'},
+        {"yield", no_argument, 0, 'y'},
+        {"sync", required_argument, 0, 's'},
         {0,0,0,0}
     };   
     while(1){
-        int c = getopt_long(argc, argv, "i:t:", long_option, &option_index);
+        int c = getopt_long(argc, argv, "i:t:ys:", long_option, &option_index);
         if(c == -1) //No more argument 
             break; 
         switch(c){
@@ -128,6 +152,26 @@ int main(int argc, char ** argv){
             case 'i':
                 num_of_iterations = atoi(optarg);
                 break;
+            case 'y':
+                opt_yield = 1;
+                break; 
+            case 's':{
+                char option = optarg[0];
+                switch(option){
+                    case 's':
+                        which_lock = SPIN_LOCK;
+                        break; 
+                    case 'm':
+                        which_lock = MUTEX;
+                        break; 
+                    case 'c':
+                        which_lock = COMPARE_AND_SWAP;
+                        break; 
+                    default:
+                        exit(1);
+                }
+                break;
+            } 
             default: 
                 exit(1);
         };
