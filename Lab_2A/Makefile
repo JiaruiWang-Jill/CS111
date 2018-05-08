@@ -2,7 +2,7 @@
 #EMAIL:liuyi.shi@outlook.com
 #ID:904801945
 
-FILES = lab2_add.c Makefile README yield.sh *.png *.csv *.gp lab2_list.c SortedList.h SortedList.c
+FILES = lab2_add.c Makefile README testscript.sh *.png *.csv *.gp lab2_list.c SortedList.h SortedList.c
 
 .SILENT:
 

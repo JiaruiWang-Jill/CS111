@@ -2,32 +2,60 @@
 #EMAIL:liuyi.shi@outlook.com
 #ID:904801945
 
+README: file descriptions, answer to questions
+Makefile: program build, clean, tar,graph
+lab2_add.c lab2_list.c: source codes 
+SortedList.h SortedList.c: linked list operations interface and implementation
+*.png: the graphs drawn from the result of codes with different options
+*.csv: reuslt of the c file 
+testscript.sh: testcases use to generate .csv
+*.gp: script to generate graph
+
+
+
 QUESTION 2.1.1 - causing conflicts:
 Why does it take many iterations before errors are seen?
+Becasue the time for running a single add function is much less than the time for a thread creating time.
+If the iterations is large enough, the threads will eventually be able to interupt each others. 
 Why does a significantly smaller number of iterations so seldom fail?
+same as above 
 
 QUESTION 2.1.2 - cost of yielding:
 Why are the --yield runs so much slower?
+because the system call and context swtich related with yield takes a lot of time.
 Where is the additional time going?
+context switch 
 Is it possible to get valid per-operation timings if we are using the --yield option?
+no
 If so, explain how. If not, explain why not.
+because we don't know the information of the threads. We cannot predict the overhead and behaviors, so we cannot get a valid timing. 
 
 QUESTION 2.1.3 - measurement errors:
 Why does the average cost per operation drop with increasing iterations?
+becasue it is average out by the iterations. 
 If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
+We can pick a reasonalbe number of iterations to keep the time reasonable. 
 
 QUESTION 2.1.4 - costs of serialization:
 Why do all of the options perform similarly for low numbers of threads?
+becasue there is no waiting time. Computer is able to run mulitple threads on several cores without involving the critical sections. 
 Why do the three protected operations slow down as the number of threads rises?
+beacsue they need to waiting for the critical sections. 
+
 
 QUESTION 2.2.1 - scalability of Mutex
 Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
+time increases in both cases beacsue they need to wait for the lock. 
 Comment on the general shapes of the curves, and explain why they have this shape.
+Times for the add begins with increase and the rate of increasing drops. Times for the list keep increasing from the beginning to the end. Because of the contention 
 Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+Increasing rate for add is larger than for list beacuse add takes less time to do the computation than lists. 
 QUESTION 2.2.2 - scalability of spin locks
 
 Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
+Both increase as the threads numbers go up beacuse of the context switch and contention. 
 Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+Both graphs are pretty similary. but spinlock requires more time when thread number is large beucause it needs extra works to check the conditiosn.
 
 Reference: 
 random number generator: https://www.tutorialspoint.com/c_standard_library/c_function_rand.htm
