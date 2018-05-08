@@ -25,9 +25,37 @@ lock_type which_lock = NO_LOCK;
 long long my_elapsed_time_in_ns = 0;
 
 
+void print_info(){
+  char* lock="";
+  if(which_lock == NO_LOCK){
+    lock = "NONE";
+  }else if(which_lock == MUTEX){
+    lock = "MUEX";
+  }else if(which_lock == SPIN_LOCK){
+    lock = "SPIN_LOCK";
+  }
+ 
+  char option_yield[] = "";
+  if(!opt_yield){
+      const char* temp = "none";
+      strcpy(option_yield, temp);
+    }
+    if (opt_yield & INSERT_YIELD){
+      const char* temp = "i";
+      strcpy(option_yield, temp);
+    }
+    if (opt_yield & DELETE_YIELD){
+        strcat(option_yield, "d");
+    }
+    if (opt_yield & LOOKUP_YIELD){
+        strcat(option_yield, "l");
+    }
+  fprintf(stderr, "Threads=%d; Iterations=%d; Lock=%s; Yield=%s \n", num_of_threads, num_of_iterations, lock, option_yield);
+}
 
 void segfault_handler(){
     fprintf(stderr, "ERROR; caught segmentation fault\n");
+    print_info();
     exit(2);
 }
 
@@ -82,6 +110,7 @@ void* thread_function_to_run_test(void * index){
     }
     if (list_length == -1) {
         fprintf(stderr, "ERROR; failed to get length of list\n");
+	print_info();
         exit(2);
     }
 
@@ -94,10 +123,12 @@ void* thread_function_to_run_test(void * index){
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
+		    print_info();
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+		    print_info();
                     exit(2);
                 }
                 break;
@@ -108,10 +139,12 @@ void* thread_function_to_run_test(void * index){
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
+		    print_info();
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+		    print_info();
                     exit(2);
                 }
                 pthread_mutex_unlock(&my_mutex);
@@ -123,10 +156,12 @@ void* thread_function_to_run_test(void * index){
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
+		    print_info();
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+		    print_info();
                     exit(2);
                 }
                 __sync_lock_release(&my_spin_lock);
@@ -139,12 +174,14 @@ void* thread_function_to_run_test(void * index){
 
 void print_result(){
     char* print_lock;
-    char* option_yield = "";
-    if(!option_yield){
-        option_yield = "none";
+    char option_yield[20] = "";
+    if(!opt_yield){
+      const char* temp = "none";
+      strcpy(option_yield, temp);
     }
     if (opt_yield & INSERT_YIELD){
-        option_yield = "i";
+      const char* temp = "i";
+      strcpy(option_yield, temp);
     } 
     if (opt_yield & DELETE_YIELD){
         strcat(option_yield, "d");
@@ -165,14 +202,8 @@ void print_result(){
     }
     int total_op = num_of_threads * num_of_iterations * 3; 
     long long average_time_per_op = my_elapsed_time_in_ns/total_op;
-    if(opt_yield){
-        printf("add-%s-%s,%d,%d,1,%d,%lld,%lld\n", option_yield,print_lock, num_of_threads,
-               num_of_iterations, total_op, my_elapsed_time_in_ns, average_time_per_op);
-    }
-    else{
-        printf("add-%s,%d,%d,1,%d,%lld,%lld\n", print_lock, num_of_threads,
-               num_of_iterations, total_op, my_elapsed_time_in_ns, average_time_per_op);
-    }
+
+    printf("list-%s-%s,%d,%d,1,%d,%lld,%lld\n", option_yield,print_lock, num_of_threads,num_of_iterations, total_op, my_elapsed_time_in_ns, average_time_per_op);
 }
 
 int main(int argc, char ** argv){
@@ -197,7 +228,7 @@ int main(int argc, char ** argv){
                 num_of_iterations = atoi(optarg);
                 break;
             case 'y':
-                for(int i =0; i < strlen(optarg); i++){
+                for(size_t i =0; i < strlen(optarg); i++){
                     if(optarg[i] == 'i')
                         opt_yield |= INSERT_YIELD;
                     else if (optarg[i] == 'd')
@@ -220,8 +251,8 @@ int main(int argc, char ** argv){
                 }
                 break; 
             }
-            defalut:
-                exit(1);
+
+
         } 
     }
     signal(SIGSEGV, segfault_handler);
@@ -282,7 +313,8 @@ int main(int argc, char ** argv){
 
     // check the length of the list 
     if(SortedList_length(list) != 0){
-        fprintf(stderr, "Error; length of the list is not zero");
+        fprintf(stderr, "Error; length of the list is not zero  ");
+	print_info();
         exit(2);
     }
 

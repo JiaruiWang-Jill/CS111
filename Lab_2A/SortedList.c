@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "SortedList.h"
 #include <sched.h>
 #include <string.h>
@@ -24,15 +25,17 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element){
 }
 
 int SortedList_delete( SortedListElement_t *element){
-    if(element->next->prev == element && element->prev->next == element){
-        if(opt_yield & DELETE_YIELD)
-            sched_yield();
-        element->next->prev = element->prev;
-        element->prev->next = element->next;
-        return 0;
-    } else {
-        return 1;
-    }
+  if(element == NULL)
+    return 1;
+  if(element->next->prev == element && element->prev->next == element){
+    if(opt_yield & DELETE_YIELD)
+      sched_yield();
+    element->next->prev = element->prev;
+    element->prev->next = element->next;
+    return 0;
+  } else {
+    return 1;
+  }
     
 }
 
