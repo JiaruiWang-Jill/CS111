@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sched.h>
 #include "SortedList.h"
+#include <signal.h>
 
 // Variables 
 SortedList_t* list;
