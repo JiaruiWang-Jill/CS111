@@ -16,3 +16,14 @@ QUESTION 2.1.4 - costs of serialization:
 Why do all of the options perform similarly for low numbers of threads?
 Why do the three protected operations slow down as the number of threads rises?
 
+QUESTION 2.2.1 - scalability of Mutex
+Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
+Comment on the general shapes of the curves, and explain why they have this shape.
+Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+QUESTION 2.2.2 - scalability of spin locks
+
+Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
+Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+
+Reference: 
+random number generator: https://www.tutorialspoint.com/c_standard_library/c_function_rand.htm
