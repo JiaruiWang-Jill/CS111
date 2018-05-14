@@ -42,3 +42,20 @@ plot \
      "< grep 'list-none-s,' lab2_list.csv" using ($2):(1000000000/($7)) \
 	title 'list w/spin-lock' with linespoints lc rgb 'green'
 
+
+set title "Scalability-2: Per-operation Times for Mutex Protected List Operations"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Mean time/operation (ns)"
+set logscale y 10
+set output 'lab2b_2.png'
+
+
+plot \
+     "< grep 'list-none-m,' lab2_list.csv" using ($2):($7) \
+        title 'completion' with linespoints lc rgb 'red', \
+     "< grep 'list-none-m,' lab2_list.csv" using ($2):($8) \
+        title 'wait-for-lock time' with linespoints lc rgb 'blue'
+
+
+

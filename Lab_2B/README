@@ -24,9 +24,17 @@ Why does this operation become so expensive with large numbers of threads?
 QUESTION 2.3.3 - Mutex Wait Time:
 Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
 Why does the average lock-wait time rise so dramatically with the number of contending threads?
-
+    Beacause the increasing in threads will cause more contention. Every threads need to wait longer time in order to get the resources they need. 
 Why does the completion time per operation rise (less dramatically) with the number of contending threads?
-
+    Because the thread number increases as well. Thus the inrease in waiting time is amortized by the increasing number in threads. 
 How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+    Because you add up the time of all threads. When multiple threads are paralliing, completion time will only count it once, but the wait time per operation will count it multiple times.
 
+QUESTION 2.3.4 - Performance of Partitioned Lists
+Explain the change in performance of the synchronized methods as a function of the number of lists.
+    
+Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
+    
+It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
+    
 
