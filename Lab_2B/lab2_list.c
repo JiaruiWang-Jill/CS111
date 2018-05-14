@@ -67,7 +67,7 @@ void segfault_handler(){
 void* thread_function_to_run_test(void * index){
     struct timespec start,end;
     // Sortedlist_insert 
-    int thread_id = (*((int*) index)/num_of_iterations;
+    int thread_id = *((int*) index)/num_of_iterations;
     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
         switch(which_lock){
             case NO_LOCK:
