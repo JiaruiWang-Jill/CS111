@@ -9,58 +9,43 @@
 #include "SortedList.h"
 #include <signal.h>
 
+typedef struct sublist{
+    SortedList_t* own_list;
+    int spin_lock;
+    pthread_mutex_t mutex_lock;
+} Sublist_t;
+
+typedef enum locks {
+    NO_LOCK, MUTEX, SPIN_LOCK
+} lock_type;
+
 // Variables 
 SortedList_t* list;
 SortedListElement_t *elements;
+Sublist_t* sub_list;
 int num_of_iterations = 1; 
 int num_of_threads = 1;
 int num_of_lists = 1;
 int opt_yield = 0;
 int my_spin_lock = 0;
 int total_elements = 0;
-
-
 pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER; 
-typedef enum locks {
-  NO_LOCK, MUTEX, SPIN_LOCK
-} lock_type;
 lock_type which_lock = NO_LOCK;
 long long my_elapsed_time_in_ns = 0;
 long long thread_lock_time[100] = {0};
 long long total_lock_time = 0;
 
-
-// void print_info(){
-//   char* lock="";
-//   if(which_lock == NO_LOCK){
-//     lock = "NONE";
-//   }else if(which_lock == MUTEX){
-//     lock = "MUEX";
-//   }else if(which_lock == SPIN_LOCK){
-//     lock = "SPIN_LOCK";
-//   }
- 
-//   char option_yield[] = "";
-//   if(!opt_yield){
-//       const char* temp = "none";
-//       strcpy(option_yield, temp);
-//     }
-//     if (opt_yield & INSERT_YIELD){
-//       const char* temp = "i";
-//       strcpy(option_yield, temp);
-//     }
-//     if (opt_yield & DELETE_YIELD){
-//         strcat(option_yield, "d");
-//     }
-//     if (opt_yield & LOOKUP_YIELD){
-//         strcat(option_yield, "l");
-//     }
-//   fprintf(stderr, "Threads=%d; Iterations=%d; Lock=%s; Yield=%s \n", num_of_threads, num_of_iterations, lock, option_yield);
-// }
+// hash function 
+unsigned long hash(const char * key){
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *key++) != 0)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    return hash;
+}
 
 void segfault_handler(){
     fprintf(stderr, "ERROR; caught segmentation fault\n");
-    ////print_info();
     exit(2);
 }
 
@@ -69,10 +54,12 @@ void* thread_function_to_run_test(void * index){
     // Sortedlist_insert 
     int thread_id = (*((int*) index))/num_of_iterations;
     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
+        int hash_index = hash(elements[i].key);
+
         switch(which_lock){
             case NO_LOCK:
             {
-                SortedList_insert(list, &elements[i]);
+                SortedList_insert(sub_list[hash_index].own_list, &elements[i]);
                 break;
             }
             case MUTEX:
@@ -90,7 +77,7 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
-                SortedList_insert(list, &elements[i]);
+                SortedList_insert(sub_list[hash_index].own_list, &elements[i]);
                 pthread_mutex_unlock(&my_mutex);
                 break; 
             }
@@ -109,7 +96,7 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
-                SortedList_insert(list, &elements[i]);
+                SortedList_insert(sub_list[hash_index].own_list, &elements[i]);
                 __sync_lock_release(&my_spin_lock);
                 break;
             }
@@ -118,10 +105,11 @@ void* thread_function_to_run_test(void * index){
 
     // Get length 
     int list_length = 0; 
-    switch(which_lock){
+    for(int i = 0; i< num_of_lists; i++){
+        switch(which_lock){
         case NO_LOCK:
         {
-            list_length = SortedList_length(list);
+            list_length = SortedList_length(sub_list[i].own_list);
             break;
         }
         case MUTEX:
@@ -130,7 +118,7 @@ void* thread_function_to_run_test(void * index){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
                 }
-                pthread_mutex_lock(&my_mutex);
+                pthread_mutex_lock(&sub_list[i].mutex_lock);
                 if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
@@ -139,8 +127,8 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
-            list_length = SortedList_length(list);
-            pthread_mutex_unlock(&my_mutex);
+            list_length = SortedList_length(sub_list[i].own_list);
+            pthread_mutex_unlock(&sub_list[i].mutex_lock);
             break; 
         }
         case SPIN_LOCK: 
@@ -149,7 +137,7 @@ void* thread_function_to_run_test(void * index){
                 fprintf(stderr,"ERROR; fail to get time\n");
                 exit(1);
             }
-            while(__sync_lock_test_and_set(&my_spin_lock, 1));
+            while(__sync_lock_test_and_set(&sub_list[i].spin_lock, 1));
             if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
                 fprintf(stderr,"ERROR; fail to get time\n");
                 exit(1);
@@ -158,32 +146,31 @@ void* thread_function_to_run_test(void * index){
             thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
             thread_lock_time[thread_id]+=end.tv_nsec;
             thread_lock_time[thread_id]-=start.tv_nsec;
-            list_length = SortedList_length(list);
-            __sync_lock_release(&my_spin_lock);
+            list_length = SortedList_length(sub_list[i].own_list);
+            __sync_lock_release(&sub_list[i].spin_lock);
             break;
+        }
         }
     }
     if (list_length == -1) {
-        fprintf(stderr, "ERROR; failed to get length of list\n");
-	    //print_info();
+        fprintf(stderr, "ERROR; failed to get length of list\n");    
         exit(2);
     }
 
     // Looks up and delete
     SortedListElement_t *new = NULL;
     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
+        int hash_index = hash(elements[i].key);
         switch(which_lock){
             case NO_LOCK:
             {
-                new = SortedList_lookup(list, elements[i].key);
+                new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
                 if(new == NULL){
-                    fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    //print_info();
+                    fprintf(stderr, "ERROR; fail to find the element in the list\n");		    
                     exit(2);
                 }
                 if(SortedList_delete(new)){
-                    fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    //print_info();
+                    fprintf(stderr, "ERROR; fail to delete the element in the list\n");	    
                     exit(2);
                 }
                 break;
@@ -194,7 +181,7 @@ void* thread_function_to_run_test(void * index){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
                 }
-                pthread_mutex_lock(&my_mutex);
+                pthread_mutex_lock(&sub_list[hash_index].mutex_lock);
                 if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
@@ -204,18 +191,18 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
                 
-                new = SortedList_lookup(list, elements[i].key);
+                new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    //print_info();
+		    
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    //print_info();
+		    
                     exit(2);
                 }
-                pthread_mutex_unlock(&my_mutex);
+                pthread_mutex_unlock(&sub_list[hash_index].mutex_lock);
                 break; 
             }
             case SPIN_LOCK: 
@@ -224,7 +211,7 @@ void* thread_function_to_run_test(void * index){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
                 }
-                while(__sync_lock_test_and_set(&my_spin_lock, 1));
+                while(__sync_lock_test_and_set(&sub_list[hash_index].spin_lock, 1));
                 if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
@@ -233,18 +220,18 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
-                new = SortedList_lookup(list, elements[i].key);
+                new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    //print_info();
+		    
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    //print_info();
+		    
                     exit(2);
                 }
-                __sync_lock_release(&my_spin_lock);
+                __sync_lock_release(&sub_list[hash_index].spin_lock);
                 break;
             }
         }
@@ -373,6 +360,22 @@ int main(int argc, char ** argv){
     struct timespec my_start_time;
     clock_gettime(CLOCK_MONOTONIC, &my_start_time);
 
+    sub_list = (Sublist_t*)malloc(num_of_lists * sizeof(Sublist_t));
+    if(sub_list == NULL){
+        fprintf(stderr,"ERROR; fail to create sub_list\n");
+        free(elements);
+        exit(1);
+    }
+
+    for(int i = 0; i< num_of_lists; i++){
+        sub_list[i].own_list = (SortedList_t*)malloc(sizeof(SortedList_t));
+        sub_list[i].own_list->key=NULL;
+        sub_list[i].own_list->next=sub_list[i].own_list;
+        sub_list[i].own_list->prev=sub_list[i].own_list;
+        pthread_mutex_init(&sub_list[i].mutex_lock,NULL);
+        sub_list[i].spin_lock = 0;
+    }
+
     int index[num_of_threads] ;
     for(int i = 0;i<num_of_threads;i++)
         index[i] = i*num_of_iterations;
@@ -400,9 +403,13 @@ int main(int argc, char ** argv){
     clock_gettime(CLOCK_MONOTONIC, &my_end_time);
 
     // check the length of the list 
-    if(SortedList_length(list) != 0){
+    int total_length = 0;
+    for(int i = 0; i< num_of_lists; i++){
+        total_length += SortedList_length(sub_list[i].own_list);
+    }
+    if(total_length != 0){
         fprintf(stderr, "Error; length of the list is not zero  ");
-	//print_info();
+	
         exit(2);
     }
     
