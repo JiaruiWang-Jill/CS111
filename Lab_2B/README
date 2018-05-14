@@ -1,0 +1,19 @@
+#NAME:Liuyi Shi
+#EMAIL:liuyi.shi@outlook.com
+#ID:904801945
+
+Files Descriptions: 
+
+
+QUESTION 2.3.1 - Cycles in the basic list implementation:
+Where do you believe most of the cycles are spent in the 1 and 2-thread list tests ?
+    They go to list insertion, lookup and delets.
+Why do you believe these to be the most expensive parts of the code?
+    Becasue there aren't many threads for it to wait for. 
+Where do you believe most of the time/cycles are being spent in the high-thread spin-lock tests?
+    I think most of the time are being spent on spinning of each thread. 
+Where do you believe most of the time/cycles are being spent in the high-thread mutex tests?
+    I think for mutex, most of its time are being spent on doing system call including blocking and context swith. 
+
+
+
