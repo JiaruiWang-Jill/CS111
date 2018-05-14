@@ -27,37 +27,37 @@ lock_type which_lock = NO_LOCK;
 long long my_elapsed_time_in_ns = 0;
 
 
-void print_info(){
-  char* lock="";
-  if(which_lock == NO_LOCK){
-    lock = "NONE";
-  }else if(which_lock == MUTEX){
-    lock = "MUEX";
-  }else if(which_lock == SPIN_LOCK){
-    lock = "SPIN_LOCK";
-  }
+// void print_info(){
+//   char* lock="";
+//   if(which_lock == NO_LOCK){
+//     lock = "NONE";
+//   }else if(which_lock == MUTEX){
+//     lock = "MUEX";
+//   }else if(which_lock == SPIN_LOCK){
+//     lock = "SPIN_LOCK";
+//   }
  
-  char option_yield[] = "";
-  if(!opt_yield){
-      const char* temp = "none";
-      strcpy(option_yield, temp);
-    }
-    if (opt_yield & INSERT_YIELD){
-      const char* temp = "i";
-      strcpy(option_yield, temp);
-    }
-    if (opt_yield & DELETE_YIELD){
-        strcat(option_yield, "d");
-    }
-    if (opt_yield & LOOKUP_YIELD){
-        strcat(option_yield, "l");
-    }
-  fprintf(stderr, "Threads=%d; Iterations=%d; Lock=%s; Yield=%s \n", num_of_threads, num_of_iterations, lock, option_yield);
-}
+//   char option_yield[] = "";
+//   if(!opt_yield){
+//       const char* temp = "none";
+//       strcpy(option_yield, temp);
+//     }
+//     if (opt_yield & INSERT_YIELD){
+//       const char* temp = "i";
+//       strcpy(option_yield, temp);
+//     }
+//     if (opt_yield & DELETE_YIELD){
+//         strcat(option_yield, "d");
+//     }
+//     if (opt_yield & LOOKUP_YIELD){
+//         strcat(option_yield, "l");
+//     }
+//   fprintf(stderr, "Threads=%d; Iterations=%d; Lock=%s; Yield=%s \n", num_of_threads, num_of_iterations, lock, option_yield);
+// }
 
 void segfault_handler(){
     fprintf(stderr, "ERROR; caught segmentation fault\n");
-    print_info();
+    ////print_info();
     exit(2);
 }
 
@@ -112,7 +112,7 @@ void* thread_function_to_run_test(void * index){
     }
     if (list_length == -1) {
         fprintf(stderr, "ERROR; failed to get length of list\n");
-	    print_info();
+	    //print_info();
         exit(2);
     }
 
@@ -125,12 +125,12 @@ void* thread_function_to_run_test(void * index){
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    print_info();
+		    //print_info();
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    print_info();
+		    //print_info();
                     exit(2);
                 }
                 break;
@@ -141,12 +141,12 @@ void* thread_function_to_run_test(void * index){
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    print_info();
+		    //print_info();
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    print_info();
+		    //print_info();
                     exit(2);
                 }
                 pthread_mutex_unlock(&my_mutex);
@@ -158,12 +158,12 @@ void* thread_function_to_run_test(void * index){
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    print_info();
+		    //print_info();
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    print_info();
+		    //print_info();
                     exit(2);
                 }
                 __sync_lock_release(&my_spin_lock);
@@ -321,7 +321,7 @@ int main(int argc, char ** argv){
     // check the length of the list 
     if(SortedList_length(list) != 0){
         fprintf(stderr, "Error; length of the list is not zero  ");
-	print_info();
+	//print_info();
         exit(2);
     }
 
