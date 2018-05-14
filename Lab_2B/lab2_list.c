@@ -19,12 +19,15 @@ int opt_yield = 0;
 int my_spin_lock = 0;
 int total_elements = 0;
 
+
 pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER; 
 typedef enum locks {
   NO_LOCK, MUTEX, SPIN_LOCK
 } lock_type;
 lock_type which_lock = NO_LOCK;
 long long my_elapsed_time_in_ns = 0;
+long long thread_lock_time[100] = {0};
+long long total_lock_time = 0;
 
 
 // void print_info(){
@@ -62,7 +65,9 @@ void segfault_handler(){
 }
 
 void* thread_function_to_run_test(void * index){
+    struct timespec start,end;
     // Sortedlist_insert 
+    int thread_id = (*((int*) index)/num_of_iterations;
     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
         switch(which_lock){
             case NO_LOCK:
@@ -72,14 +77,38 @@ void* thread_function_to_run_test(void * index){
             }
             case MUTEX:
             {
+                if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
                 pthread_mutex_lock(&my_mutex);
+                if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
+                
+                thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+                thread_lock_time[thread_id]+=end.tv_nsec;
+                thread_lock_time[thread_id]-=start.tv_nsec;
                 SortedList_insert(list, &elements[i]);
                 pthread_mutex_unlock(&my_mutex);
                 break; 
             }
             case SPIN_LOCK: 
             {
+                if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
                 while(__sync_lock_test_and_set(&my_spin_lock, 1));
+                if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
+                
+                thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+                thread_lock_time[thread_id]+=end.tv_nsec;
+                thread_lock_time[thread_id]-=start.tv_nsec;
                 SortedList_insert(list, &elements[i]);
                 __sync_lock_release(&my_spin_lock);
                 break;
@@ -97,14 +126,38 @@ void* thread_function_to_run_test(void * index){
         }
         case MUTEX:
         {
+            if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
+                fprintf(stderr,"ERROR; fail to get time\n");
+                exit(1);
+            }
             pthread_mutex_lock(&my_mutex);
+            if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                fprintf(stderr,"ERROR; fail to get time\n");
+                exit(1);
+            }
+                
+            thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+            thread_lock_time[thread_id]+=end.tv_nsec;
+            thread_lock_time[thread_id]-=start.tv_nsec;
             list_length = SortedList_length(list);
             pthread_mutex_unlock(&my_mutex);
             break; 
         }
         case SPIN_LOCK: 
         {
+            if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
+                fprintf(stderr,"ERROR; fail to get time\n");
+                exit(1);
+            }
             while(__sync_lock_test_and_set(&my_spin_lock, 1));
+            if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                fprintf(stderr,"ERROR; fail to get time\n");
+                exit(1);
+            }
+                
+            thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+            thread_lock_time[thread_id]+=end.tv_nsec;
+            thread_lock_time[thread_id]-=start.tv_nsec;
             list_length = SortedList_length(list);
             __sync_lock_release(&my_spin_lock);
             break;
@@ -137,7 +190,20 @@ void* thread_function_to_run_test(void * index){
             }
             case MUTEX:
             {
+                if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
                 pthread_mutex_lock(&my_mutex);
+                if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
+                
+                thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+                thread_lock_time[thread_id]+=end.tv_nsec;
+                thread_lock_time[thread_id]-=start.tv_nsec;
+                SortedList_insert(list, &elements[i]);
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
@@ -154,7 +220,19 @@ void* thread_function_to_run_test(void * index){
             }
             case SPIN_LOCK: 
             {
+                if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
                 while(__sync_lock_test_and_set(&my_spin_lock, 1));
+                if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
+                
+                thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+                thread_lock_time[thread_id]+=end.tv_nsec;
+                thread_lock_time[thread_id]-=start.tv_nsec;
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
@@ -204,8 +282,9 @@ void print_result(){
     }
     int total_op = num_of_threads * num_of_iterations * 3; 
     long long average_time_per_op = my_elapsed_time_in_ns/total_op;
-
-    printf("list-%s-%s,%d,%d,%d,%d,%lld,%lld\n", option_yield,print_lock, num_of_threads,num_of_iterations,num_of_lists ,total_op, my_elapsed_time_in_ns, average_time_per_op);
+    int total_lock_op = num_of_threads *(num_of_iterations*2 +1);
+    long long average_wait_for_lock = total_lock_time/total_lock_op;
+    printf("list-%s-%s,%d,%d,%d,%d,%lld,%lld,%lld\n", option_yield,print_lock, num_of_threads,num_of_iterations,num_of_lists ,total_op, my_elapsed_time_in_ns, average_time_per_op,average_wait_for_lock);
 }
 
 int main(int argc, char ** argv){
@@ -324,8 +403,11 @@ int main(int argc, char ** argv){
 	//print_info();
         exit(2);
     }
-
+    
     // calculate the elapsed time 
+    for(int i = 0; i< num_of_threads; i++){
+        total_lock_time += thread_lock_time[i];
+    }
     my_elapsed_time_in_ns = (my_end_time.tv_sec - my_start_time.tv_sec) * 1000000000;
     my_elapsed_time_in_ns += my_end_time.tv_nsec;
     my_elapsed_time_in_ns -= my_start_time.tv_nsec; 
