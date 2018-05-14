@@ -37,11 +37,13 @@ long long total_lock_time = 0;
 
 // hash function 
 unsigned long hash(const char * key){
-    unsigned long hash = 5381;
-    int c;
-    while ((c = *key++) != 0)
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-    return hash;
+  unsigned int value =0;
+  const char* temp = key;
+  while(*temp != '\0'){
+    value +=(*temp-'a');
+    temp++;
+  }
+  return value%num_of_lists;
 }
 
 void segfault_handler(){
@@ -423,6 +425,10 @@ int main(int argc, char ** argv){
 
     free(list);
     free(elements);
+    for(int i =0; i<num_of_lists;i++){
+      free(sub_list[i].own_list);
+    }
+    free(sub_list);
 
     // report data 
     print_result();
