@@ -127,18 +127,18 @@ void* thread_function_to_run_test(void * index){
         case MUTEX:
         {
             if(clock_gettime(CLOCK_MONOTONIC,&start)<0){
-                fprintf(stderr,"ERROR; fail to get time\n");
-                exit(1);
-            }
-            pthread_mutex_lock(&my_mutex);
-            if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
-                fprintf(stderr,"ERROR; fail to get time\n");
-                exit(1);
-            }
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
+                pthread_mutex_lock(&my_mutex);
+                if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
+                    fprintf(stderr,"ERROR; fail to get time\n");
+                    exit(1);
+                }
                 
-            thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
-            thread_lock_time[thread_id]+=end.tv_nsec;
-            thread_lock_time[thread_id]-=start.tv_nsec;
+                thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
+                thread_lock_time[thread_id]+=end.tv_nsec;
+                thread_lock_time[thread_id]-=start.tv_nsec;
             list_length = SortedList_length(list);
             pthread_mutex_unlock(&my_mutex);
             break; 
@@ -203,7 +203,7 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
-                SortedList_insert(list, &elements[i]);
+                
                 new = SortedList_lookup(list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
