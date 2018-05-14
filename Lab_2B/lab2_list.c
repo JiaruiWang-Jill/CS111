@@ -284,7 +284,9 @@ void print_result(){
     long long average_time_per_op = my_elapsed_time_in_ns/total_op;
     int total_lock_op = num_of_threads *(num_of_iterations*2 +1);
     long long average_wait_for_lock = total_lock_time/total_lock_op;
-    printf("list-%s-%s,%d,%d,%d,%d,%lld,%lld,%lld\n", option_yield,print_lock, num_of_threads,num_of_iterations,num_of_lists ,total_op, my_elapsed_time_in_ns, average_time_per_op,average_wait_for_lock);
+    printf("list-%s-%s,%d,%d,%d,%d,%lld,%lld,%lld\n", 
+        option_yield,print_lock, num_of_threads,num_of_iterations,num_of_lists,
+        total_op, my_elapsed_time_in_ns, average_time_per_op,average_wait_for_lock);
 }
 
 int main(int argc, char ** argv){
