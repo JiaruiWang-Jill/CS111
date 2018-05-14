@@ -28,7 +28,7 @@ set terminal png
 set datafile separator ","
 
 # how many threads/iterations we can run without failure (w/o yielding)
-set title "List-1: Throughput of synchronized lists"
+set title "Scalability-1: Throughput of synchronized lists"
 set xlabel "Threads"
 set logscale x 2
 set ylabel "Throughput (operation/sec)"

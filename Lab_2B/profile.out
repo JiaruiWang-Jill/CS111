@@ -1,0 +1,138 @@
+Total: 6825 samples
+    6469  94.8%  94.8%     6469  94.8% print_info
+     231   3.4%  98.2%      231   3.4% SortedList_lookup
+     123   1.8% 100.0%      123   1.8% SortedList_delete
+       1   0.0% 100.0%        1   0.0% __libc_csu_init
+       1   0.0% 100.0%        1   0.0% _int_free
+       0   0.0% 100.0%     6824 100.0% __clone
+       0   0.0% 100.0%        1   0.0% __do_global_dtors_aux
+       0   0.0% 100.0%        1   0.0% __libc_start_main
+       0   0.0% 100.0%        1   0.0% main
+       0   0.0% 100.0%     6824 100.0% start_thread
+       0   0.0% 100.0%     6824 100.0% thread_function_to_run_test
+ROUTINE ====================== thread_function_to_run_test in /u/eng/class/classihi/CS111/Lab_2B/lab2_list.c
+     0   6824 Total samples (flat / cumulative)
+     .      .   59:     fprintf(stderr, "ERROR; caught segmentation fault\n");
+     .      .   60:     print_info();
+     .      .   61:     exit(2);
+     .      .   62: }
+     .      .   63: 
+---
+     .      .   64: void* thread_function_to_run_test(void * index){
+     .      .   65:     // Sortedlist_insert 
+     .      .   66:     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
+     .      .   67:         switch(which_lock){
+     .      .   68:             case NO_LOCK:
+     .      .   69:             {
+     .      .   70:                 SortedList_insert(list, &elements[i]);
+     .      .   71:                 break;
+     .      .   72:             }
+     .      .   73:             case MUTEX:
+     .      .   74:             {
+     .   3515   75:                 pthread_mutex_lock(&my_mutex);
+     .    123   76:                 SortedList_insert(list, &elements[i]);
+     .      .   77:                 pthread_mutex_unlock(&my_mutex);
+     .      .   78:                 break; 
+     .      .   79:             }
+     .      .   80:             case SPIN_LOCK: 
+     .      .   81:             {
+     .      .   82:                 while(__sync_lock_test_and_set(&my_spin_lock, 1));
+     .      .   83:                 SortedList_insert(list, &elements[i]);
+     .      1   84:                 __sync_lock_release(&my_spin_lock);
+     .      .   85:                 break;
+     .      .   86:             }
+     .      .   87:         }
+     .      .   88:     }
+     .      .   89: 
+     .      .   90:     // Get length 
+     .      .   91:     int list_length = 0; 
+     .      .   92:     switch(which_lock){
+     .      .   93:         case NO_LOCK:
+     .      .   94:         {
+     .   2954   95:             list_length = SortedList_length(list);
+     .      .   96:             break;
+     .      .   97:         }
+     .      .   98:         case MUTEX:
+     .      .   99:         {
+     .      .  100:             pthread_mutex_lock(&my_mutex);
+     .      .  101:             list_length = SortedList_length(list);
+     .      .  102:             pthread_mutex_unlock(&my_mutex);
+     .      .  103:             break; 
+     .      .  104:         }
+     .      .  105:         case SPIN_LOCK: 
+     .      .  106:         {
+     .    231  107:             while(__sync_lock_test_and_set(&my_spin_lock, 1));
+     .      .  108:             list_length = SortedList_length(list);
+     .      .  109:             __sync_lock_release(&my_spin_lock);
+     .      .  110:             break;
+     .      .  111:         }
+     .      .  112:     }
+     .      .  113:     if (list_length == -1) {
+     .      .  114:         fprintf(stderr, "ERROR; failed to get length of list\n");
+     .      .  115: 	    print_info();
+     .      .  116:         exit(2);
+     .      .  117:     }
+     .      .  118: 
+     .      .  119:     // Looks up and delete
+     .      .  120:     SortedListElement_t *new = NULL;
+     .      .  121:     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
+     .      .  122:         switch(which_lock){
+     .      .  123:             case NO_LOCK:
+     .      .  124:             {
+     .      .  125:                 new = SortedList_lookup(list, elements[i].key);
+     .      .  126:                 if(new == NULL){
+     .      .  127:                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
+     .      .  128: 		    print_info();
+     .      .  129:                     exit(2);
+     .      .  130:                 }
+     .      .  131:                 if(SortedList_delete(new)){
+     .      .  132:                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+     .      .  133: 		    print_info();
+     .      .  134:                     exit(2);
+     .      .  135:                 }
+     .      .  136:                 break;
+     .      .  137:             }
+     .      .  138:             case MUTEX:
+     .      .  139:             {
+     .      .  140:                 pthread_mutex_lock(&my_mutex);
+     .      .  141:                 new = SortedList_lookup(list, elements[i].key);
+     .      .  142:                 if(new == NULL){
+     .      .  143:                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
+     .      .  144: 		    print_info();
+     .      .  145:                     exit(2);
+     .      .  146:                 }
+     .      .  147:                 if(SortedList_delete(new)){
+     .      .  148:                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+     .      .  149: 		    print_info();
+     .      .  150:                     exit(2);
+     .      .  151:                 }
+     .      .  152:                 pthread_mutex_unlock(&my_mutex);
+     .      .  153:                 break; 
+     .      .  154:             }
+     .      .  155:             case SPIN_LOCK: 
+     .      .  156:             {
+     .      .  157:                 while(__sync_lock_test_and_set(&my_spin_lock, 1));
+     .      .  158:                 new = SortedList_lookup(list, elements[i].key);
+     .      .  159:                 if(new == NULL){
+     .      .  160:                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
+     .      .  161: 		    print_info();
+     .      .  162:                     exit(2);
+     .      .  163:                 }
+     .      .  164:                 if(SortedList_delete(new)){
+     .      .  165:                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+     .      .  166: 		    print_info();
+     .      .  167:                     exit(2);
+     .      .  168:                 }
+     .      .  169:                 __sync_lock_release(&my_spin_lock);
+     .      .  170:                 break;
+     .      .  171:             }
+     .      .  172:         }
+     .      .  173:     }
+     .      .  174:     return NULL; 
+     .      .  175: }
+---
+     .      .  176: 
+     .      .  177: void print_result(){
+     .      .  178:     char* print_lock;
+     .      .  179:     char option_yield[20] = "";
+     .      .  180:     if(!opt_yield){
