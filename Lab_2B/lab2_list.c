@@ -330,6 +330,8 @@ int main(int argc, char ** argv){
                 num_of_lists = atoi(optarg);
                 break;
             }
+	default:
+	  exit(1);
 
 
         } 

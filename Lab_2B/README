@@ -3,6 +3,18 @@
 #ID:904801945
 
 Files Descriptions: 
+SortedList.h - header file of sorted list 
+SortedList.c - implementation of sorted list 
+lab2_list.c - main functions 
+Makefile -makefile and many other functions 
+lab2b_list.csv - output result 
+profile.out - profile of where time are spent 
+lab2b_1.png - throughput vs. number of threads for mutex and spin-lock synchronized list operations.
+lab2b_2.png - mean time per mutex wait and mean time per operation for mutex-synchronized list operations.
+lab2b_3.png - successful iterations vs. threads for each synchronization method.
+lab2b_4.png - throughput vs. number of threads for mutex synchronized partitioned lists.
+lab2b_5.png - throughput vs. number of threads for spin-lock-synchronized partitioned lists.
+README  - this file 
 
 
 QUESTION 2.3.1 - Cycles in the basic list implementation:
@@ -32,9 +44,9 @@ How is it possible for the wait time per operation to go up faster (or higher) t
 
 QUESTION 2.3.4 - Performance of Partitioned Lists
 Explain the change in performance of the synchronized methods as a function of the number of lists.
-    
+    With more sub lists, we are able to gain an increase in throughput. Becasue each list's size is decreased, the workload for each thread is decreased. 
 Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
-    
+    No. Becasue the smallest size of each list is limited. It cannot go infiinitely small. However, with a list too small, the number of lists will become very large. The space complexity will become our main concern. 
 It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
-    
+    Yes. It does seem true to be in my curves. 
 
