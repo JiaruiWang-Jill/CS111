@@ -37,9 +37,9 @@ set output 'lab2b_1.png'
 
 # grep out only single threaded, un-protected, non-yield results
 plot \
-     "< grep 'list-none-m,' lab2_list.csv" using ($2):(1000000000/($7)) \
+     "< grep 'list-none-m,[0-9]\\+,1000,1,' lab2_list.csv" using ($2):(1000000000/($7)) \
 	title 'list w/mutex' with linespoints lc rgb 'red', \
-     "< grep 'list-none-s,' lab2_list.csv" using ($2):(1000000000/($7)) \
+     "< grep 'list-none-s,[0-9]\\+,1000,1,' lab2_list.csv" using ($2):(1000000000/($7)) \
 	title 'list w/spin-lock' with linespoints lc rgb 'green'
 
 
@@ -52,9 +52,9 @@ set output 'lab2b_2.png'
 
 
 plot \
-     "< grep 'list-none-m,' lab2_list.csv" using ($2):($7) \
+     "< grep 'list-none-m,[0-9]\\+,1000,1,' lab2_list.csv" using ($2):($7) \
         title 'completion' with linespoints lc rgb 'red', \
-     "< grep 'list-none-m,' lab2_list.csv" using ($2):($8) \
+     "< grep 'list-none-m,[0-9]\\+,1000,1,' lab2_list.csv" using ($2):($8) \
         title 'wait-for-lock time' with linespoints lc rgb 'blue'
 
 
@@ -67,9 +67,45 @@ set output 'lab2b_3.png'
 
 
 plot \
-     "< grep 'list-id-none,' lab2_list.csv" using ($2):($3) \
+     "< grep 'list-id-none,[0-9]\\+,[0-9]\\+,4,' lab2_list.csv" using ($2):($3) \
         title 'unprotected' with points lc rgb 'red', \
-     "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
+     "< grep 'list-id-m,[0-9]\\+,[0-9]\\+,4,' lab2_list.csv" using ($2):($3) \
         title 'Mutex' with points lc rgb 'blue', \
-     "< grep 'list-id-s,' lab2_list.csv" using ($2):($3) \
+     "< grep 'list-id-s,[0-9]\\+,[0-9]\\+,4,' lab2_list.csv" using ($2):($3) \
         title 'Spin-Lock' with points lc rgb 'green'
+
+set title "Scalability-4: Throughput of Mutex-Synchronized Partitioned Lists"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Throughput(opeartions/second)"
+set logscale y 10
+set output 'lab2b_4.png'
+
+
+plot \
+     "< grep 'list-none-m,[0-9][2]\\?,1000,1,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=1' with linespoints lc rgb 'red', \
+     "< grep 'list-none-m,[0-9][2]\\?,1000,4,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=4' with linespoints lc rgb 'yellow', \
+     "< grep 'list-none-m,[0-9][2]\\?,1000,8,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=8' with linespoints lc rgb 'blue', \
+     "< grep 'list-none-m,[0-9][2]\\?,1000,16,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=16' with linespoints lc rgb 'green'
+
+set title "Scalability-5: Throughput of Spin-Lock Synchronized Partitioned Lists"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Throughput(opeartions/second)"
+set logscale y 10
+set output 'lab2b_5.png'
+
+
+plot \
+     "< grep 'list-none-s,[0-9][2]\\?,1000,1,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=1' with linespoints lc rgb 'red', \
+     "< grep 'list-none-s,[0-9][2]\\?,1000,4,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=4' with linespoints lc rgb 'yellow', \
+     "< grep 'list-none-s,[0-9][2]\\?,1000,8,' lab2_list.csv" using ($2):(100000000/($7)) \
+        title 'list=8' with linespoints lc rgb 'blue', \
+     "< grep 'list-none-s,[0-9][2]\\?,1000,16,' lab2_list.csv" using ($2):(100000000/($7)) \
+	title 'list=16' with linespoints lc rgb 'green'

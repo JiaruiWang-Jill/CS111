@@ -16,7 +16,7 @@ typedef struct sublist{
 } Sublist_t;
 
 typedef enum locks {
-    NO_LOCK, MUTEX, SPIN_LOCK
+  NO_LOCK, MUTEX, SPIN_LOCK
 } lock_type;
 
 // Variables 
@@ -70,7 +70,7 @@ void* thread_function_to_run_test(void * index){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
                 }
-                pthread_mutex_lock(&my_mutex);
+                pthread_mutex_lock(&sub_list[hash_index].mutex_lock);
                 if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
@@ -80,7 +80,7 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
                 SortedList_insert(sub_list[hash_index].own_list, &elements[i]);
-                pthread_mutex_unlock(&my_mutex);
+                pthread_mutex_unlock(&sub_list[hash_index].mutex_lock);
                 break; 
             }
             case SPIN_LOCK: 
@@ -89,7 +89,7 @@ void* thread_function_to_run_test(void * index){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
                 }
-                while(__sync_lock_test_and_set(&my_spin_lock, 1));
+                while(__sync_lock_test_and_set(&sub_list[hash_index].spin_lock, 1));
                 if(clock_gettime(CLOCK_MONOTONIC,&end)<0){
                     fprintf(stderr,"ERROR; fail to get time\n");
                     exit(1);
@@ -99,7 +99,7 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
                 SortedList_insert(sub_list[hash_index].own_list, &elements[i]);
-                __sync_lock_release(&my_spin_lock);
+                __sync_lock_release(&sub_list[hash_index].spin_lock);
                 break;
             }
         }
@@ -155,7 +155,7 @@ void* thread_function_to_run_test(void * index){
         }
     }
     if (list_length == -1) {
-        fprintf(stderr, "ERROR; failed to get length of list\n");    
+        fprintf(stderr, "ERROR; fail to get length of list\n");    
         exit(2);
     }
 
@@ -288,7 +288,7 @@ int main(int argc, char ** argv){
         {"iterations", required_argument, 0, 'i'},
         {"yield", required_argument, 0, 'y'},
         {"sync", required_argument, 0, 's'},
-        {"list",required_argument, 0, 'l'},
+        {"lists",required_argument, 0, 'l'},
         {0,0,0,0}
     };
     while(1){
@@ -345,7 +345,7 @@ int main(int argc, char ** argv){
 
     // create and initialize list's elements 
     total_elements = num_of_iterations * num_of_threads;
-    elements = (SortedListElement_t*)malloc(total_elements * sizeof(SortedListElement_t));
+    elements = malloc(total_elements * sizeof(SortedListElement_t));
  
     /* Intializes random number generator */
     srand(time(NULL));
@@ -356,8 +356,8 @@ int main(int argc, char ** argv){
         random_key[1] = '\0';
 
         elements[i].key = random_key;
-	elements[i].prev=&elements[i];
-	elements[i].next=&elements[i];
+	//elements[i].prev=&elements[i];
+	//elements[i].next=&elements[i];
     }
 
     pthread_t threads[num_of_threads];
