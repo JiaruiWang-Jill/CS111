@@ -58,4 +58,18 @@ plot \
         title 'wait-for-lock time' with linespoints lc rgb 'blue'
 
 
+set title "Scalability-3: Correct Syncornization of Partitioned Lists"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Successful Iterations"
+set logscale y 10
+set output 'lab2b_3.png'
 
+
+plot \
+     "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
+        title 'unprotected' with points lc rgb 'red', \
+     "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
+        title 'Mutex' with points lc rgb 'blue'\
+     "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
+        title 'Spin-Lock' with points lc rgb 'green'
