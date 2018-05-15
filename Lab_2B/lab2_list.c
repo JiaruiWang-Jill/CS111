@@ -21,7 +21,7 @@ typedef enum locks {
 
 // Variables 
 SortedList_t* list;
-SortedListElement_t *elements;
+SortedListElement_t *elements = NULL;
 Sublist_t* sub_list;
 int num_of_iterations = 1; 
 int num_of_threads = 1;
@@ -36,7 +36,7 @@ long long thread_lock_time[100] = {0};
 long long total_lock_time = 0;
 
 // hash function 
-unsigned long hash(const char * key){
+unsigned int hash(const char * key){
   unsigned int value =0;
   const char* temp = key;
   while(*temp != '\0'){
@@ -57,7 +57,7 @@ void* thread_function_to_run_test(void * index){
     int thread_id = (*((int*) index))/num_of_iterations;
     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
         int hash_index = hash(elements[i].key);
-
+	//printf("HASHVALUE IN INSERT: %d\n", hash_index);
         switch(which_lock){
             case NO_LOCK:
             {
@@ -160,19 +160,21 @@ void* thread_function_to_run_test(void * index){
     }
 
     // Looks up and delete
-    SortedListElement_t *new = NULL;
+    //SortedListElement_t *new = NULL;
     for(int i = *((int*) index); i < *((int*) index)+ num_of_iterations; i++){
         int hash_index = hash(elements[i].key);
+	//printf("HASHVALUE IN DELETE: %d\n", hash_index);
         switch(which_lock){
             case NO_LOCK:
             {
-                new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
+                SortedListElement_t* new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");		    
                     exit(2);
                 }
                 if(SortedList_delete(new)){
-                    fprintf(stderr, "ERROR; fail to delete the element in the list\n");	    
+                    fprintf(stderr, "ERROR; fail to delete the element in the list\n");
+		    //TODO FREE ALL
                     exit(2);
                 }
                 break;
@@ -193,15 +195,15 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
                 
-                new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
+                 SortedListElement_t* new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    
+		    //TODO FREE ALL
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    
+		    //TODO FREE ALL 
                     exit(2);
                 }
                 pthread_mutex_unlock(&sub_list[hash_index].mutex_lock);
@@ -222,15 +224,15 @@ void* thread_function_to_run_test(void * index){
                 thread_lock_time[thread_id]+=(end.tv_sec - start.tv_sec) * 1000000000;
                 thread_lock_time[thread_id]+=end.tv_nsec;
                 thread_lock_time[thread_id]-=start.tv_nsec;
-                new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
+                SortedListElement_t* new = SortedList_lookup(sub_list[hash_index].own_list, elements[i].key);
                 if(new == NULL){
                     fprintf(stderr, "ERROR; fail to find the element in the list\n");
-		    
+		    //FREE ALL
                     exit(2);
                 }
                 if(SortedList_delete(new)){
                     fprintf(stderr, "ERROR; fail to delete the element in the list\n");
-		    
+		    //FREE ALL
                     exit(2);
                 }
                 __sync_lock_release(&sub_list[hash_index].spin_lock);
@@ -343,7 +345,7 @@ int main(int argc, char ** argv){
 
     // create and initialize list's elements 
     total_elements = num_of_iterations * num_of_threads;
-    elements = malloc(total_elements * sizeof(SortedListElement_t));
+    elements = (SortedListElement_t*)malloc(total_elements * sizeof(SortedListElement_t));
  
     /* Intializes random number generator */
     srand(time(NULL));
@@ -354,6 +356,8 @@ int main(int argc, char ** argv){
         random_key[1] = '\0';
 
         elements[i].key = random_key;
+	elements[i].prev=&elements[i];
+	elements[i].next=&elements[i];
     }
 
     pthread_t threads[num_of_threads];
@@ -411,7 +415,7 @@ int main(int argc, char ** argv){
     }
     if(total_length != 0){
         fprintf(stderr, "Error; length of the list is not zero  ");
-	
+	//FREE ALL
         exit(2);
     }
     

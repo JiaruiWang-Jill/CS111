@@ -67,9 +67,9 @@ set output 'lab2b_3.png'
 
 
 plot \
-     "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
+     "< grep 'list-id-none,' lab2_list.csv" using ($2):($3) \
         title 'unprotected' with points lc rgb 'red', \
      "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
-        title 'Mutex' with points lc rgb 'blue'\
-     "< grep 'list-id-m,' lab2_list.csv" using ($2):($3) \
+        title 'Mutex' with points lc rgb 'blue', \
+     "< grep 'list-id-s,' lab2_list.csv" using ($2):($3) \
         title 'Spin-Lock' with points lc rgb 'green'

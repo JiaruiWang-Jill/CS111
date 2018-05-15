@@ -1,7 +1,7 @@
 #NAME:Liuyi Shi
 #EMAIL:liuyi.shi@outlook.com
 #ID:904801945
-#SLIPDAYS:2
+#SLIPDAYS:1
 
 README: file descriptions, answer to questions
 Makefile: program build, clean, tar,graph
