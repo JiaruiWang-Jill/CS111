@@ -1,6 +1,7 @@
 //FIXME: Temp not convert correctly 
 //FIXME: manually kill job during test script or it will freeze
 // 妈的， 绝对这个SCRIPT 有问题 
+//TODO: turn to 5v from 3v 
 #include <stdlib.h>
 #include <stdio.h> 
 #include <unistd.h>
@@ -33,11 +34,11 @@ FILE *logfile_fd = 0; // log's file descriptor
 
 // Const for Tempeature Sensor Algorith
 const int B = 4275;  // B value of therimistor
-const int R0 = 100000;  //R0=100k
+const double R0 = 100000.0;  //R0=100k
 
 // Convert temperature from analog input to real number 
 double raw_to_temp(double input){
-    double R = (1023.0/input-1.0) * R0;
+    double R = (660/input-1.0) * R0;
     float temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
     if(temperature_scale){
         return (temp *9 / 5 +32); // Fahrenheit 
@@ -124,7 +125,7 @@ void parsing_arg(const char* buffer){
     {
         stop_flag = !IS_STOP;
     }
-    else if (buffer[0] == 'L' && buffer[1] == 'O' && buffer[2] == 'G' && buffer[3] == ' ')
+    else if (buffer[0] == 'L' && buffer[1] == 'O' && buffer[2] == 'G')
     {
         log_change();
     }
@@ -139,12 +140,15 @@ void parsing_arg(const char* buffer){
     else {
         fprintf(stderr, "ERROR; invalid arguments!\n");
     }
-    fprintf(stdout, "%s",buffer);
+    
     if (logging_flag)
     {
         fprintf(logfile_fd, "%s", buffer);
         fflush(logfile_fd);
     }
+    //else {
+    //    fprintf(stdout, "%s", buffer);
+    //}
 }
 
 
@@ -264,10 +268,10 @@ int main(int argc, char** argv){
 
         // Pollin 
         if(pf_array[0].revents & POLLIN){
-            char buffer[50];
-            //memset(buffer, 0, 256);
-            //int ret_value = read(STDIN_FILENO, &buffer, 256);
-            fgets(buffer, 50, stdin);
+            char buffer[256];
+            memset(buffer, 0, 256);
+            int ret_value = read(STDIN_FILENO, &buffer, 256);
+            //fgets(buffer, 50, stdin);
             //scanf("%s", buffer);
             if(ret_value == 0){
                 shutdown_process();
