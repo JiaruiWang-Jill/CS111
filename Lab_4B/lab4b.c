@@ -1,5 +1,6 @@
 //FIXME: Temp not convert correctly 
-
+//FIXME: manually kill job during test script or it will freeze
+// 妈的， 绝对这个SCRIPT 有问题 
 #include <stdlib.h>
 #include <stdio.h> 
 #include <unistd.h>
@@ -98,26 +99,33 @@ void signal_wrapper()
 
 // Parsing function 
 void parsing_arg(const char* buffer){
-    if (strcmp(buffer, "OFF")==0){
+    //if (strcmp(buffer, "OFF")==0)
+    if(buffer[0] == 'O' && buffer[1] == 'F' && buffer[2] == 'F')
+    {
         running_flag = 0;
     }
-    else if (strcmp(buffer, "SCALE=F") == 0)
+    //else if (strcmp(buffer, "SCALE=F") == 0)
+    else if (buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == 'A' && buffer[3] == 'L' && buffer[4] == 'E' && buffer[5] == '=' && buffer[6] == 'F')
     {
         temperature_scale = Temp_Fahrenheit;
     }
-    else if (strcmp(buffer, "SCALE=C") == 0)
+    //else if (strcmp(buffer, "SCALE=C") == 0)
+    else if (buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == 'A' && buffer[3] == 'L' && buffer[4] == 'E' && buffer[5] == '=' && buffer[6] == 'C')
     {
         temperature_scale = Temp_Celsius;
     }
-    else if (strcmp(buffer, "STOP") == 0)
+    //else if (strcmp(buffer, "STOP") == 0)
+    else if (buffer[0] == 'S' && buffer[1] == 'T' && buffer[2] == 'O' && buffer[3] == 'P')
     {
         stop_flag = IS_STOP;
     }
-    else if (strcmp(buffer, "START") == 0)
+    //else if (strcmp(buffer, "START") == 0)
+    else if (buffer[0] == 'S' && buffer[1] == 'T' && buffer[2] == 'A' && buffer[3] == 'R' && buffer[4] == 'T')
     {
         stop_flag = !IS_STOP;
     }
-    else if (buffer[0] == 'L' && buffer[1] == 'O' && buffer[2] == 'G'){
+    else if (buffer[0] == 'L' && buffer[1] == 'O' && buffer[2] == 'G' && buffer[3] == ' ')
+    {
         log_change();
     }
     else if (buffer[0] == 'P' && buffer[1] == 'E' && buffer[2] == 'R' && buffer[3] == 'I' && buffer[4] == 'O' && buffer[5] == 'D' && buffer[6] == '='){
@@ -131,10 +139,10 @@ void parsing_arg(const char* buffer){
     else {
         fprintf(stderr, "ERROR; invalid arguments!\n");
     }
-    fprintf(stdout, "%s\n",buffer);
+    fprintf(stdout, "%s",buffer);
     if (logging_flag)
     {
-        fprintf(logfile_fd, "%s\n", buffer);
+        fprintf(logfile_fd, "%s", buffer);
         fflush(logfile_fd);
     }
 }
@@ -256,9 +264,11 @@ int main(int argc, char** argv){
 
         // Pollin 
         if(pf_array[0].revents & POLLIN){
-            char buffer[25];
+            char buffer[50];
+            //memset(buffer, 0, 256);
             //int ret_value = read(STDIN_FILENO, &buffer, 256);
-            scanf("%s", buffer);
+            fgets(buffer, 50, stdin);
+            //scanf("%s", buffer);
             if(ret_value == 0){
                 shutdown_process();
                 exit(EXIT_SUCCESS);
