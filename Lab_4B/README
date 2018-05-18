@@ -1,3 +1,13 @@
+NAME: Liuyi Shi 
+EMAIL: liuyi.shi@outlook.com
+ID: 904801945
+
+Files: 
+Makefile: can make, tarball and clean. 
+README: This file.
+lab4b.c: the main function of getting temperature and report it.
+
+
 Reference: 
 https://www.tutorialspoint.com/c_standard_library/c_function_localtime.htm
 http://www.cplusplus.com/reference/ctime/strftime/
