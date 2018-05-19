@@ -23,7 +23,7 @@ mraa_aio_context temperature_sensor;
 mraa_gpio_context button; 
 
 // Flags
-sig_atomic_t volatile running_flag = 1; 
+int running_flag = 1; 
 int temperature_scale = Temp_Fahrenheit;
 int logging_flag = 0; 
 int stop_flag = !IS_STOP;
@@ -37,8 +37,8 @@ const int B = 4275;  // B value of therimistor
 const double R0 = 100000.0;  //R0=100k
 
 // Convert temperature from analog input to real number 
-double raw_to_temp(doub\le input){
-    double R = (660/input-1.0) * R0;
+double raw_to_temp(double input){
+    double R = (1023.0/input-1.0) * R0;
     float temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
     if(temperature_scale){
         return (temp *9 / 5 +32); // Fahrenheit 
