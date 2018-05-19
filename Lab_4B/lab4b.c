@@ -38,9 +38,11 @@ const double R0 = 100000.0;  //R0=100k
 
 // Convert temperature from analog input to real number 
 double raw_to_temp(double input){
-    double R = (1023.0/input-1.0);
-    R = R * R0;
-    double temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
+    // double R = (1023.0/input-1.0);
+    // R = R * R0;
+    // double temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
+    double R = (660.0 / input - 1.0) * 100000.0;
+    double temp = 1.0 / (log(R / 100000.0) / 4275 + 1 / 298.15) - 273.15;
     if(temperature_scale){
         return (temp *9 / 5 +32); // Fahrenheit 
     }
@@ -247,7 +249,7 @@ int main(int argc, char** argv){
         }
 
         // Get temeprature 
-        temp_input_raw = mraa_aio_read_float(temperature_sensor);
+        temp_input_raw = mraa_aio_read(temperature_sensor);
         temp_pro = raw_to_temp(temp_input_raw);
         
         // Period
