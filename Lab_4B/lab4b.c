@@ -40,7 +40,7 @@ const double R0 = 100000.0;  //R0=100k
 double raw_to_temp(double input){
     double R = (1023.0/input-1.0);
     R = R * R0;
-    float temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
+    double temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
     if(temperature_scale){
         return (temp *9 / 5 +32); // Fahrenheit 
     }
