@@ -275,16 +275,30 @@ int main(int argc, char** argv){
             int ret_value = read(STDIN_FILENO, &buffer, 256);
             //fgets(buffer, 50, stdin);
             //scanf("%s", buffer);
-            if(ret_value == 0){
+            if (ret_value > 0){
+                char *s = buffer; 
+                while ( s < &buffer[ret_value]){
+                    char *e = s;
+                    while (e < &buffer[ret_value] && *e != '\n')
+                        e++; 
+                    *e = 0;
+                    parsing_arg(buffer);
+                    s = &e[1];
+                }
+                if(running_flag = 0){
+                    break; 
+                }   
+            }
+            else if(ret_value == 0){
                 shutdown_process();
                 exit(EXIT_SUCCESS);
             }
-            else if (ret_value < 0){
+            else {
                 fprintf(stderr, "ERROR; fail to read.\n");
                 exit(EXIT_FAILURE);
             }
 
-            parsing_arg(buffer);
+            
             
         } // END-if 
         
