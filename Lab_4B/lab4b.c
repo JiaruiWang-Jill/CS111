@@ -37,7 +37,7 @@ const int B = 4275;  // B value of therimistor
 const double R0 = 100000.0;  //R0=100k
 
 // Convert temperature from analog input to real number 
-double raw_to_temp(double input){
+double raw_to_temp(doub\le input){
     double R = (660/input-1.0) * R0;
     float temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
     if(temperature_scale){
@@ -224,6 +224,7 @@ int main(int argc, char** argv){
     struct pollfd pf_array[1];
     pf_array[0].fd = STDIN_FILENO; // polls from stdin
     pf_array[0].events = POLLIN | POLLHUP | POLLERR;
+    //TODO: revents 
 
     signal(SIGINT, do_when_interrupt);
     time_t last_cycle_time = 0;
@@ -234,6 +235,7 @@ int main(int argc, char** argv){
 
         // Poll 
         int ret_value = poll(pf_array, 1, 0);
+        //FIXME: Change poll 
         if (ret_value < 0){
             fprintf(stderr, "ERROR; polling error.\n");
             exit(EXIT_FAILURE);
