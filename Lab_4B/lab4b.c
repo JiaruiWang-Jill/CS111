@@ -101,28 +101,28 @@ void signal_wrapper()
 
 // Parsing function 
 void parsing_arg(const char* buffer){
-    //if (strcmp(buffer, "OFF")==0)
-    if(buffer[0] == 'O' && buffer[1] == 'F' && buffer[2] == 'F')
+    if (strcmp(buffer, "OFF")==0)
+    //if(buffer[0] == 'O' && buffer[1] == 'F' && buffer[2] == 'F')
     {
         running_flag = 0;
     }
-    //else if (strcmp(buffer, "SCALE=F") == 0)
-    else if (buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == 'A' && buffer[3] == 'L' && buffer[4] == 'E' && buffer[5] == '=' && buffer[6] == 'F')
+    else if (strcmp(buffer, "SCALE=F") == 0)
+    //else if (buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == 'A' && buffer[3] == 'L' && buffer[4] == 'E' && buffer[5] == '=' && buffer[6] == 'F')
     {
         temperature_scale = Temp_Fahrenheit;
     }
-    //else if (strcmp(buffer, "SCALE=C") == 0)
-    else if (buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == 'A' && buffer[3] == 'L' && buffer[4] == 'E' && buffer[5] == '=' && buffer[6] == 'C')
+    else if (strcmp(buffer, "SCALE=C") == 0)
+    //else if (buffer[0] == 'S' && buffer[1] == 'C' && buffer[2] == 'A' && buffer[3] == 'L' && buffer[4] == 'E' && buffer[5] == '=' && buffer[6] == 'C')
     {
         temperature_scale = Temp_Celsius;
     }
-    //else if (strcmp(buffer, "STOP") == 0)
-    else if (buffer[0] == 'S' && buffer[1] == 'T' && buffer[2] == 'O' && buffer[3] == 'P')
+    else if (strcmp(buffer, "STOP") == 0)
+    //else if (buffer[0] == 'S' && buffer[1] == 'T' && buffer[2] == 'O' && buffer[3] == 'P')
     {
         stop_flag = IS_STOP;
     }
-    //else if (strcmp(buffer, "START") == 0)
-    else if (buffer[0] == 'S' && buffer[1] == 'T' && buffer[2] == 'A' && buffer[3] == 'R' && buffer[4] == 'T')
+    else if (strcmp(buffer, "START") == 0)
+    //else if (buffer[0] == 'S' && buffer[1] == 'T' && buffer[2] == 'A' && buffer[3] == 'R' && buffer[4] == 'T')
     {
         stop_flag = !IS_STOP;
     }
@@ -144,7 +144,7 @@ void parsing_arg(const char* buffer){
     
     if (logging_flag)
     {
-        fprintf(logfile_fd, "%s", buffer);
+        fprintf(logfile_fd, "%s\n", buffer);
         fflush(logfile_fd);
     }
     //else {
@@ -283,6 +283,16 @@ int main(int argc, char** argv){
             char buffer[256];
             memset(buffer, 0, 256);
             int ret_value = read(STDIN_FILENO, &buffer, 256);
+            if (ret_value == 0)
+            {
+                shutdown_process();
+                exit(EXIT_SUCCESS);
+            }
+            else if (ret_value < 0)
+            {
+                fprintf(stderr, "ERROR; fail to read.\n");
+                exit(EXIT_FAILURE);
+            }
             char* comm = strtok(buffer, "\n");				//breaks buff into strings when newline read
 
 	            //process commands until no commands left
@@ -308,14 +318,7 @@ int main(int argc, char** argv){
             //         break; 
             //     }   
             // }
-            if(ret_value == 0){
-                shutdown_process();
-                exit(EXIT_SUCCESS);
-            }
-            else {
-                fprintf(stderr, "ERROR; fail to read.\n");
-                exit(EXIT_FAILURE);
-            }
+            
 
             
             
