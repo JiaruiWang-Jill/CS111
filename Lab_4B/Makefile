@@ -23,3 +23,9 @@ dist:
 clean:
 	$(RM) $(TARGET) *.o *.tar.gz
 
+check: default 
+	./lab4b << -EOF \n 
+	OFF 
+	EOF 
+
+
