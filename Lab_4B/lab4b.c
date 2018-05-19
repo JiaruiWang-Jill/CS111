@@ -295,7 +295,7 @@ int main(int argc, char** argv){
                     parsing_arg(buffer);
                     s = &e[1];
                 }
-                if(running_flag = 0){
+                if(running_flag == 0){
                     break; 
                 }   
             }
