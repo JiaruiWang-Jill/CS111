@@ -283,23 +283,32 @@ int main(int argc, char** argv){
             char buffer[256];
             memset(buffer, 0, 256);
             int ret_value = read(STDIN_FILENO, &buffer, 256);
+            char* comm = strtok(buffer, "\n");				//breaks buff into strings when newline read
+
+	            //process commands until no commands left
+	            while (comm != NULL && ret_value> 0){
+	            	//process command
+	            	parsing_arg(comm);
+
+	            	comm = strtok(NULL, "\n");					//keep reading from buff, if no input left set to NULL
+	            }
             //fgets(buffer, 50, stdin);
             //scanf("%s", buffer);
-            if (ret_value > 0){
-                char *s = buffer; 
-                while ( s < &buffer[ret_value]){
-                    char *e = s;
-                    while (e < &buffer[ret_value] && *e != '\n')
-                        e++; 
-                    *e = 0;
-                    parsing_arg(buffer);
-                    s = &e[1];
-                }
-                if(running_flag == 0){
-                    break; 
-                }   
-            }
-            else if(ret_value == 0){
+            // if (ret_value > 0){
+            //     char *s = buffer; 
+            //     while ( s < &buffer[ret_value]){
+            //         char *e = s;
+            //         while (e < &buffer[ret_value] && *e != '\n')
+            //             e++; 
+            //         *e = 0;
+            //         parsing_arg(buffer);
+            //         s = &e[1];
+            //     }
+            //     if(running_flag == 0){
+            //         break; 
+            //     }   
+            // }
+            if(ret_value == 0){
                 shutdown_process();
                 exit(EXIT_SUCCESS);
             }
