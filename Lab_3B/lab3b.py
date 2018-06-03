@@ -202,7 +202,7 @@ def main():
     # =======================================================
     my_unallocated_inodes = my_ifree
     my_allocated_inodes = []
-    my_reserved = []
+    #my_reserved = []
 
     for inode in my_inode:
         #print("Error 1 {}".format(inode.file_type))
@@ -221,6 +221,7 @@ def main():
             my_allocated_inodes.append(inode)
 
     for i_pos in range(my_sp.first_inode, my_sp.num_inodes):
+        my_reserved = []
         for inode in my_inode:
             if inode.inode_number == i_pos:
                 my_reserved.append(inode)
