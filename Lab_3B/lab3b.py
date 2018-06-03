@@ -222,7 +222,7 @@ def main():
         for inode in my_inode:
             if inode.inode_number == i_pos:
                 my_reserved.append(inode)
-        if not (not (len(my_reserved) <= 0) or not (i_pos not in my_ifree)):
+        if (len(my_reserved) <= 0) and (i_pos not in my_ifree):
             # De Morgan Law changed, check if there is an error
             print("UNALLOCATED INODE {} NOT ON FREELIST".format(i_pos))
             my_error = True
