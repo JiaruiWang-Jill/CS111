@@ -205,21 +205,20 @@ def main():
     my_reserved = []
 
     for inode in my_inode:
-        print(inode.file_type)
+        #print("Error 1 {}".format(inode.file_type))
         if inode.file_type == '0':
-            print(inode.inode_number)
-            print(my_ifree)
+            #print("Error 2 {}".format(inode.inode_number))
+            #print("Error 3 {}".format(my_ifree))
             if inode.inode_number not in my_ifree:
                 print("UNALLOCATED INODE {} NOT ON FREELIST".format(inode.inode_number))
                 my_error = True
                 my_unallocated_inodes.append(inode.inode_number)
-            else:
-                if inode.inode_number in my_ifree:
-                    print("ALLOCATED INODE {} ON FREELIST".format(inode.inode_number))
-                    my_error = True
-                    my_unallocated_inodes.remove(inode.inode_number)
-
-                my_allocated_inodes.append(inode.inode_number)
+        else:
+            if inode.inode_number in my_ifree:
+                print("ALLOCATED INODE {} ON FREELIST".format(inode.inode_number))
+                my_error = True
+                my_unallocated_inodes.remove(inode.inode_number)
+            my_allocated_inodes.append(inode)
 
     for i_pos in range(my_sp.first_inode, my_sp.num_inodes):
         for inode in my_inode:
@@ -277,7 +276,7 @@ def main():
         if inode.inode_number not in my_dict_inode:
             if inode.linkage_counts != 0:
                 my_error = True
-                print('INODE {} HAS 0 LINKS BUT LINKCOUNT IS {}'.format(inode.inode_number, inode.link_count))
+                print('INODE {} HAS 0 LINKS BUT LINKCOUNT IS {}'.format(inode.inode_number, inode.linkage_counts))
         else:
             temp_link_inode = inode.linkage_counts
             temp_link_entry = my_dict_inode[inode.inode_number]
