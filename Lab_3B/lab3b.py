@@ -249,7 +249,7 @@ def main():
             print('DIRECTORY INODE {} NAME {} UNALLOCATED INODE {}'.format(parent_inode_number, directory_name,
                                                                            inode_number))
             my_error = True
-        elif 1 < inode_number < my_sp.num_inodes:
+        elif inode_number < 1 or inode_number > my_sp.num_inodes:
             print(
                 'DIRECTORY INODE {} NAME {} INVALID INODE {}'.format(parent_inode_number, directory_name, inode_number))
             my_error = True
