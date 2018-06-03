@@ -205,7 +205,10 @@ def main():
     my_reserved = []
 
     for inode in my_inode:
+        print(inode.file_type)
         if inode.file_type == '0':
+            print(inode.inode_number)
+            print(my_ifree)
             if inode.inode_number not in my_ifree:
                 print("UNALLOCATED INODE {} NOT ON FREELIST".format(inode.inode_number))
                 my_error = True
