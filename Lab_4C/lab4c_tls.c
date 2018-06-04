@@ -14,6 +14,9 @@
 #include <string.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 #define Temp_Fahrenheit 1
 #define Temp_Celsius 0 
@@ -184,7 +187,7 @@ int main(int argc, char** argv){
         {"scale", required_argument, 0, 's'},
         {"log", required_argument, 0, 'l'},
         {"id", required_argument, 0 , 'i'},
-        {"host", required_argument, 0, 'h'}
+        {"host", required_argument, 0, 'h'},
         {0, 0, 0, 0}};
     while (1)
     {
