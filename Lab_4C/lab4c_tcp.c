@@ -44,8 +44,6 @@ double raw_to_temp(double input){
     double R = (1023.0/input-1.0);
     R = R * R0;
     double temp = 1.0/(log(R/R0)/B+1/298.15)-273.15; 
-    //double R = (660.0 / input - 1.0) * 100000.0;
-    //double temp = 1.0 / (log(R / 100000.0) / 4275 + 1 / 298.15) - 273.15;
     if(temperature_scale){
         return (temp *9 / 5 +32); // Fahrenheit 
     }
@@ -57,8 +55,8 @@ double raw_to_temp(double input){
 
 // Function for Log 
 void log_change(){
-    // Do nothing 
-    // TODO: For Lab4C 
+    // Do nothing
+    // Logging is acomplished by the calling function 
 }
 
 // Time printer
@@ -72,7 +70,7 @@ void print_time()
     time(&rawtime);
     info = localtime(&rawtime);
     strftime(buffer, 10, "%H:%M:%S", info); // Store time
-    fprintf(stdout, "%s ", buffer);
+    dprintf(socket_fd, "%s ", buffer);
     if(logging_flag){
         fprintf(logfile_fd, "%s ", buffer);
         fflush(logfile_fd);
@@ -82,7 +80,7 @@ void print_time()
 // Shutdown Process, close everything 
 void shutdown_process(){
     print_time();
-    fprintf(stdout, "SHUTDOWN\n");
+    dprintf(socket_fd, "SHUTDOWN\n");
     if (logging_flag)
     {
         fprintf(logfile_fd, "SHUTDOWN\n");
@@ -260,7 +258,7 @@ int main(int argc, char** argv){
 
     // poll structure 
     struct pollfd pf_array[1];
-    pf_array[0].fd = STDIN_FILENO; // polls from stdin
+    pf_array[0].fd = socket_fd; // polls from socket 
     pf_array[0].events = POLLIN | POLLHUP | POLLERR;
 
     signal(SIGINT, do_when_interrupt);
@@ -296,7 +294,7 @@ int main(int argc, char** argv){
                 // Print ime
                 print_time();
                 // Print Temperature
-                fprintf(stdout, "%.1f\n", temp_pro);
+                dprintf(socket_fd, "%.1f\n", temp_pro);
                 // Log temperature
                 if (logging_flag)
                 {
@@ -317,7 +315,7 @@ int main(int argc, char** argv){
         if(pf_array[0].revents & POLLIN){
             char buffer[256];
             memset(buffer, 0, 256);
-            int ret_value = read(STDIN_FILENO, &buffer, 256);
+            int ret_value = read(socket_fd, &buffer, 256);
             if (ret_value == 0)
             {
                 shutdown_process();
@@ -329,13 +327,12 @@ int main(int argc, char** argv){
                 exit(EXIT_FAILURE);
             }
             char* comm = strtok(buffer, "\n");		//breaks buff into strings when newline read
-	            //process commands until no commands left
-	            while (comm != NULL && ret_value> 0){
-	            	//process command
-	            	parsing_arg(comm);
-
-	            	comm = strtok(NULL, "\n");		//keep reading from buff, if no input left set to NULL
-	            }          
+	        //process commands until no commands left
+	        while (comm != NULL && ret_value> 0){
+	        	//process command
+	        	parsing_arg(comm);
+	            comm = strtok(NULL, "\n");		//keep reading from buff, if no input left set to NULL
+	        }          
         } // END-if 
         
     } // END-while  
