@@ -231,7 +231,7 @@ int main(int argc, char** argv){
 
     // Check the mandatory commands 
     if(logging_flag != 1 && id_num == 000000000 && host_addr == NULL)
-        exit(EXIT_ARG);
+        exit(1);
 
     // Getting port number 
     port_num = atoi(argv[optind]);
@@ -241,12 +241,12 @@ int main(int argc, char** argv){
 	SSL_load_error_strings();
 	if (SSL_library_init() < 0) {
 	    fprintf(stderr, "ERROR; error in initializing OpenSSL library\n");
-	    exit(EXIT_ARG);
+	    exit(1);
 	}
 	sslmethod = SSLv23_client_sslmethod();
 	if ((sslctx = SSL_CTX_new(sslmethod)) == NULL) {
 	    fprintf(stderr, "ERROR; error in creating a new SSL context structure\n");
-	    exit(EXIT_ARG);
+	    exit(1);
 	}
 
 	// create new SSL based on context structure
@@ -255,7 +255,7 @@ int main(int argc, char** argv){
     // Setting up Socket 
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_fd < 0){
-        fprintf{stderr, "ERROR; Cannot open socket.\n"};
+        fprintf(stderr, "ERROR; Cannot open socket.\n");
     }
 
     server = gethostbyname(host_addr);

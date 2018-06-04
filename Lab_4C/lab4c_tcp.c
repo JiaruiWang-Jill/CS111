@@ -218,7 +218,7 @@ int main(int argc, char** argv){
 
     // Check the mandatory commands 
     if(logging_flag != 1 && id_num == 000000000 && host_addr == NULL)
-        exit(EXIT_ARG);
+        exit(1);
 
     // Getting port number 
     port_num = atoi(argv[optind]);
@@ -226,7 +226,7 @@ int main(int argc, char** argv){
     // Setting up Socket 
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_fd < 0){
-        fprintf{stderr, "ERROR; Cannot open socket.\n"};
+        fprintf(stderr, "ERROR; Cannot open socket.\n");
     }
 
     server = gethostbyname(host_addr);
