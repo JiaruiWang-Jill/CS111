@@ -1,3 +1,6 @@
+// TODO: Change logflag to mandatory 
+// TODO: Remove Button 
+// TODO: Change all stdout to server 
 #include <stdlib.h>
 #include <stdio.h> 
 #include <unistd.h>
@@ -29,7 +32,8 @@ int sleep_period = 1; // 1/second
 FILE *logfile_fd = 0; // log's file descriptor 
 int port_num = 0; // Port number 
 int id_num = 000000000; // ID number 
-char* host_addr; // Host address  
+char* host_addr = "NULL"; // Host address 
+int socket_fd = 0; // Socket File Descriptor  
 
 // Const for Tempeature Sensor Algorith
 const int B = 4275;  // B value of therimistor
@@ -86,6 +90,7 @@ void shutdown_process(){
     }
     mraa_aio_close(temperature_sensor);
     mraa_gpio_close(button);
+    close(socket_fd);
     exit(EXIT_SUCCESS);
 }
 
@@ -147,6 +152,10 @@ void parsing_arg(const char* buffer){
 
 
 int main(int argc, char** argv){
+    // TCP 
+    struct sockaddr_in serv_addr;
+    struct hostent *server; 
+
     // RAW data 
     double temp_input_raw = 0;
 
@@ -205,8 +214,32 @@ int main(int argc, char** argv){
         };
     }
 
+    // Check the mandatory commands 
+    if(logging_flag != 1 && id_num === 000000000 && host_addr == NULL)
+        eixt(EXIT_ARG);
+
     // Getting port number 
     port_num = atoi(argv[optind]);
+
+    // Setting up Socket 
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(socket_fd < 0){
+        fprintf{stderr, "ERROR; Cannot open socket.\n"};
+    }
+
+    server = gethostbyname(host_addr);
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    memcpy((char *) &serv_addr.sin_addr.s_addr, (char*) server->h_addr, server->h_length);
+    serv_addr.sin_port = htons(port_num);
+
+    // Connect to the server 
+    if(connect(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+        fprintf(stderr,"ERROR; Cannot connect to server.\n");
+    }
+
+    // Sending ID 
+    dprintf(socket_fd, "ID=%d\n", id_num);
 
     // Initialize temperature Sensor and Button 
     temperature_sensor = mraa_aio_init(1);
