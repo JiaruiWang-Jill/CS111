@@ -217,8 +217,8 @@ int main(int argc, char** argv){
     }
 
     // Check the mandatory commands 
-    if(logging_flag != 1 && id_num === 000000000 && host_addr == NULL)
-        eixt(EXIT_ARG);
+    if(logging_flag != 1 && id_num == 000000000 && host_addr == NULL)
+        exit(EXIT_ARG);
 
     // Getting port number 
     port_num = atoi(argv[optind]);
