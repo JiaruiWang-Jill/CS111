@@ -243,7 +243,7 @@ int main(int argc, char** argv){
 	    fprintf(stderr, "ERROR; error in initializing OpenSSL library\n");
 	    exit(1);
 	}
-	sslmethod = SSLv23_client_sslmethod();
+	sslmethod = SSLv23_client_method();
 	if ((sslctx = SSL_CTX_new(sslmethod)) == NULL) {
 	    fprintf(stderr, "ERROR; error in creating a new SSL context structure\n");
 	    exit(1);
