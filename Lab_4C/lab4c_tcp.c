@@ -68,22 +68,29 @@ void print_time()
 {
     time_t rawtime;
     struct tm *info;
-    char buffer[80];
+    char buffer_rawtime[80];
 
     time(&rawtime);
     info = localtime(&rawtime);
-    strftime(buffer, 10, "%H:%M:%S", info); // Store time
-    dprintf(socket_fd, "%s ", buffer);
-    if(logging_flag){
-        fprintf(logfile_fd, "%s ", buffer);
-        fflush(logfile_fd);
-    }
+    strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
+    //dprintf(socket_fd, "%s ", buffer);
+    // if(logging_flag){
+    //     fprintf(logfile_fd, "%s ", buffer);
+    //     fflush(logfile_fd);
+    // }
 }
 
 // Shutdown Process, close everything 
 void shutdown_process(){
-    print_time();
-    dprintf(socket_fd, "SHUTDOWN\n");
+    //print_time();
+    time_t rawtime;
+    struct tm *info;
+    char buffer_rawtime[80];
+
+    time(&rawtime);
+    info = localtime(&rawtime);
+    strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
+    dprintf(socket_fd, "%s SHUTDOWN\n", buffer_rawtime);
     if (logging_flag)
     {
         fprintf(logfile_fd, "SHUTDOWN\n");
@@ -296,9 +303,16 @@ int main(int argc, char** argv){
             }
             else {
                 // Print ime
-                print_time();
+                //print_time();
+                time_t rawtime;
+                struct tm *info;
+                char buffer_rawtime[80];
+
+                time(&rawtime);
+                info = localtime(&rawtime);
+                strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
                 // Print Temperature
-                dprintf(socket_fd, "%.1f\n", temp_pro);
+                dprintf(socket_fd, "%s %.1f\n", buffer_rawtime, temp_pro);
                 // Log temperature
                 if (logging_flag)
                 {
