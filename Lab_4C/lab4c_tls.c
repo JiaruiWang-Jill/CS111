@@ -80,23 +80,34 @@ void print_time()
     time(&rawtime);
     info = localtime(&rawtime);
     strftime(buffer, 10, "%H:%M:%S", info); // Store time
-    char buffer_time[80];
-	memset(buffer_time, 0, 80);
-    sprintf(buffer_time, "%s ", buffer);
-    SSL_write(ssl, buffer_time, strlen(buffer_time));
+    //char buffer_time[80];
+	//memset(buffer_time, 0, 80);
+    //sprintf(buffer_time, "%s ", buffer);
+    //SSL_write(ssl, buffer_time, strlen(buffer_time));
     
-    if(logging_flag){
-        fprintf(logfile_fd, "%s ", buffer);
-        fflush(logfile_fd);
-    }
+    //if(logging_flag){
+    //    fprintf(logfile_fd, "%s ", buffer);
+    //    fflush(logfile_fd);
+    //}
 }
 
 // Shutdown Process, close everything 
 void shutdown_process(){
-    print_time();
+    //print_time();
+    time_t rawtime;
+    struct tm *info;
+    char buffer_rawtime[80];
+
+    time(&rawtime);
+    info = localtime(&rawtime);
+    strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
+    if(logging_flag){
+        fprintf(logfile_fd, "%s ", buffer_rawtime);
+        fflush(logfile_fd);
+    }
     char buffer_shutdown[50];
 	memset(buffer_shutdown, 0, 50);
-    sprintf(buffer_shutdown, "SHUTDOWN\n");
+    sprintf(buffer_shutdown, "%s SHUTDOWN\n", buffer_rawtime);
     SSL_write(ssl, buffer_shutdown, strlen(buffer_shutdown));
     if (logging_flag)
     {
@@ -336,11 +347,23 @@ int main(int argc, char** argv){
             }
             else {
                 // Print ime
-                print_time();
+                //print_time();
+                time_t rawtime;
+                struct tm *info;
+                char buffer_rawtime[80];
+
+                time(&rawtime);
+                info = localtime(&rawtime);
+                strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
+                if (logging_flag)
+                {
+                    fprintf(logfile_fd, "%s ", buffer_rawtime);
+                    fflush(logfile_fd);
+                }
                 // Print Temperature
                 char buffer_temp[50];
 	            memset(buffer_temp, 0, 50);
-                sprintf(buffer_temp, "%.1f\n", temp_pro);
+                sprintf(buffer_temp, "%s %.1f\n", buffer_rawtime, temp_pro);
                 SSL_write(ssl, buffer_temp, strlen(buffer_temp));                
                 // Log temperature
                 if (logging_flag)
@@ -362,7 +385,7 @@ int main(int argc, char** argv){
         if(pf_array[0].revents & POLLIN){
             char buffer[256];
             memset(buffer, 0, 256);
-            int ret_value = read(socket_fd, &buffer, 256);
+            int ret_value = SSL_read(ssl, &buffer, 256);
             if (ret_value == 0)
             {
                 shutdown_process();

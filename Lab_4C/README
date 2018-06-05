@@ -1,3 +1,8 @@
 NAME: Liuyi Shi 
 EMAIL: liuyi.shi@outlook.com
 ID: 904801945
+
+Makefile: you can compile, clean and make tarball 
+README: this file 
+lab4c_tcp : tcp connection with the server 
+lab4c_tls : encrypt version of tcp 

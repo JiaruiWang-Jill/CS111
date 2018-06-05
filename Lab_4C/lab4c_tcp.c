@@ -90,6 +90,11 @@ void shutdown_process(){
     time(&rawtime);
     info = localtime(&rawtime);
     strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
+    if (logging_flag)
+    {
+        fprintf(logfile_fd, "%s ", buffer_rawtime);
+        fflush(logfile_fd);
+    }
     dprintf(socket_fd, "%s SHUTDOWN\n", buffer_rawtime);
     if (logging_flag)
     {
@@ -312,6 +317,11 @@ int main(int argc, char** argv){
                 time(&rawtime);
                 info = localtime(&rawtime);
                 strftime(buffer_rawtime, 10, "%H:%M:%S", info); // Store time
+                if (logging_flag)
+                {
+                    fprintf(logfile_fd, "%s ", buffer_rawtime);
+                    fflush(logfile_fd);
+                }
                 // Print Temperature
                 dprintf(socket_fd, "%s %.1f\n", buffer_rawtime, temp_pro);
                 // Log temperature
