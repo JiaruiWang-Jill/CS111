@@ -140,6 +140,8 @@ def main():
                                                                               cur_offset))
                     else:
                         changed = True
+                        if cur_inode.inode_number == 180:
+                            print("my_inode, invalid")
                         if ele in block_dic:
                             block_dic[ele].append([cur_level, ele, cur_inode.inode_number, cur_offset])
                         else:
@@ -150,6 +152,8 @@ def main():
                         print('RESERVED {} {} IN INODE {} AT OFFSET {}'.format(cur_level, ele, cur_inode.inode_number,
                                                                                cur_offset))
                     elif not changed:
+                        if cur_inode.inode_number == 180:
+                            print("my_inode, reserved")
                         if ele in block_dic:
                             block_dic[ele].append([cur_level, ele, cur_inode.inode_number, cur_offset])
                         else:
@@ -169,34 +173,26 @@ def main():
             my_error = True
             print('ALLOCATED BLOCK {} ON FREELIST'.format(cur_indir.reference_number))
         else:
-            changed = False
             if cur_indir.reference_number < 0 or cur_indir.reference_number > my_sp.num_blocks:
                 my_error = True
                 print('INVALID {} {} IN INODE {} AT OFFSET {}'.format(cur_level, cur_indir.reference_number,
                                                                       cur_indir.parent_inode_number,
                                                                       cur_indir.logical_offset))
-            else:
-                changed = True
-                if cur_indir.reference_number in block_dic:
-                    block_dic[cur_indir.reference_number].append(
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset])
-                else:
-                    block_dic[cur_indir.reference_number] = [
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset]]
-            
             if cur_indir.reference_number < start_block:
                 my_error = True
                 print('RESERVED {} {} IN INODE {} AT OFFSET {}'.format(cur_level, cur_indir.reference_number,
                                                                        cur_indir.parent_inode_number,
                                                                        cur_indir.logical_offset))
-            elif not changed:
-                if cur_indir.reference_number in block_dic:
-                    block_dic[cur_indir.reference_number].append(
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset])
-                else:
-                    block_dic[cur_indir.reference_number] = [
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset]]
-            
+            if cur_indir.reference_number in block_dic:
+                if cur_inode.inode_number == 180:
+                    print("my_dir, first")
+                block_dic[cur_indir.reference_number].append(
+                    [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset])
+            else:
+                if cur_inode.inode_number == 180:
+                    print("my_dir, second")
+                block_dic[cur_indir.reference_number] = [
+                    [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset]]
 
     for _, value in block_dic.items():
         if len(value) > 1:
