@@ -249,6 +249,7 @@ int main(int argc, char** argv){
 
     // Sending ID 
     dprintf(socket_fd, "ID=%d\n", id_num);
+    fprintf(logfile_fd, "ID=%d\n", id_num);
 
     // Initialize temperature Sensor and Button 
     temperature_sensor = mraa_aio_init(1);

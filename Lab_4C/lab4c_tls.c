@@ -281,6 +281,7 @@ int main(int argc, char** argv){
 	memset(buffer_id, 0, 50);
     sprintf(buffer_id, "ID=%d\n", id_num);
     SSL_write(ssl, buffer_id, strlen(buffer_id));
+    fprintf(logfile_fd, "ID=%d\n", id_num);
 
     // Initialize temperature Sensor and Button 
     temperature_sensor = mraa_aio_init(1);
