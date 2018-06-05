@@ -114,46 +114,43 @@ def main():
     block_dic = {}
     start_block = my_group.first_block_inode + int(my_sp.inode_size * my_group.iid_group / my_sp.block_size)
     for cur_inode in my_inode:
-        for index, ele in enumerate(cur_inode.block_address):
-            if ele != 0:
-                if index == 12:
-                    cur_level = "INDIRECT BLOCK"
-                    cur_offset = 12
-                elif index == 13:
-                    cur_level = "DOUBLE INDIRECT BLOCK"
-                    cur_offset = 268
-                elif index == 14:
-                    cur_level = "TRIPLE INDIRECT BLOCK"
-                    cur_offset = 65804
-                else:
-                    cur_level = "BLOCK"
-                    cur_offset = 0
-
-                if ele in my_bfree:
-                    my_error = True
-                    print('ALLOCATED BLOCK {} ON FREELIST'.format(ele))
-                else:
-                    changed = False
-                    if ele < 0 or (ele > my_sp.num_blocks and cur_inode.file_type != 's'):
-                        my_error = True
-                        print('INVALID {} {} IN INODE {} AT OFFSET {}'.format(cur_level, ele, cur_inode.inode_number,
-                                                                              cur_offset))
+        if cur_inode.disk_space != 0 or cur_inode.file_type != 's':
+            for index, ele in enumerate(cur_inode.block_address):
+                if ele != 0:
+                    if index == 12:
+                        cur_level = "INDIRECT BLOCK"
+                        cur_offset = 12
+                    elif index == 13:
+                        cur_level = "DOUBLE INDIRECT BLOCK"
+                        cur_offset = 268
+                    elif index == 14:
+                        cur_level = "TRIPLE INDIRECT BLOCK"
+                        cur_offset = 65804
                     else:
-                        changed = True
-                        if ele in block_dic:
-                            block_dic[ele].append([cur_level, ele, cur_inode.inode_number, cur_offset])
-                        else:
-                            block_dic[ele] = []
-                            block_dic[ele].append([cur_level, ele, cur_inode.inode_number, cur_offset])
-                    if ele < start_block:
+                        cur_level = "BLOCK"
+                        cur_offset = 0
+
+                    if ele in my_bfree:
                         my_error = True
-                        print('RESERVED {} {} IN INODE {} AT OFFSET {}'.format(cur_level, ele, cur_inode.inode_number,
-                                                                               cur_offset))
-                    elif not changed:
-                        if ele in block_dic:
-                            block_dic[ele].append([cur_level, ele, cur_inode.inode_number, cur_offset])
-                        else:
-                            block_dic[ele] = [[cur_level, ele, cur_inode.inode_number, cur_offset]]
+                        print('ALLOCATED BLOCK {} ON FREELIST'.format(ele))
+                    else:
+                        changed = False
+                        if ele < 0 or ele > my_sp.num_blocks:
+                            my_error = True
+                            changed = True
+                            print('INVALID {} {} IN INODE {} AT OFFSET {}'.format(cur_level, ele, cur_inode.inode_number,
+                                                                                cur_offset))
+                        if ele < start_block:
+                            my_error = True
+                            print('RESERVED {} {} IN INODE {} AT OFFSET {}'.format(cur_level, ele, cur_inode.inode_number,
+                                                                                cur_offset))
+                        elif not changed:
+                            if ele == 1886221359:
+                                print("my_inode, reserved")
+                            if ele in block_dic:
+                                block_dic[ele].append([cur_level, ele, cur_inode.inode_number, cur_offset])
+                            else:
+                                block_dic[ele] = [[cur_level, ele, cur_inode.inode_number, cur_offset]]
 
     for cur_indir in my_indir:
         if cur_indir.level == 1:
@@ -169,36 +166,29 @@ def main():
             my_error = True
             print('ALLOCATED BLOCK {} ON FREELIST'.format(cur_indir.reference_number))
         else:
-            changed = False
             if cur_indir.reference_number < 0 or cur_indir.reference_number > my_sp.num_blocks:
                 my_error = True
                 print('INVALID {} {} IN INODE {} AT OFFSET {}'.format(cur_level, cur_indir.reference_number,
                                                                       cur_indir.parent_inode_number,
                                                                       cur_indir.logical_offset))
-            else:
-                changed = True
-                if cur_indir.reference_number in block_dic:
-                    block_dic[cur_indir.reference_number].append(
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset])
-                else:
-                    block_dic[cur_indir.reference_number] = [
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset]]
-            
             if cur_indir.reference_number < start_block:
                 my_error = True
                 print('RESERVED {} {} IN INODE {} AT OFFSET {}'.format(cur_level, cur_indir.reference_number,
                                                                        cur_indir.parent_inode_number,
                                                                        cur_indir.logical_offset))
-            elif not changed:
-                if cur_indir.reference_number in block_dic:
-                    block_dic[cur_indir.reference_number].append(
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset])
-                else:
-                    block_dic[cur_indir.reference_number] = [
-                        [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset]]
-            
+            if cur_indir.reference_number in block_dic:
+                if cur_indir.reference_number == 1886221359:
+                    print("my_dir, first")
+                block_dic[cur_indir.reference_number].append(
+                    [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset])
+            else:
+                if cur_indir.reference_number == 1886221359:
+                    print("my_dir, second")
+                block_dic[cur_indir.reference_number] = [
+                    [cur_level, cur_indir.reference_number, cur_indir.parent_inode_number, cur_indir.logical_offset]]
 
     for _, value in block_dic.items():
+        #print(value)
         if len(value) > 1:
             for temp_block in value:
                 print('DUPLICATE {} {} IN INODE {} AT OFFSET {}'.format(temp_block[0], temp_block[1], temp_block[2],
@@ -251,7 +241,7 @@ def main():
 
     for directoryentry in my_dir:
         inode_number = directoryentry.entry_reference_inode
-        if directoryentry.entry_name != "'.'" and directoryentry.entry_name != "'..'":
+        if directoryentry.entry_name[:-1] != "'.'" and directoryentry.entry_name[:-1] != "'..'":
             if 1 <= inode_number <= my_sp.num_inodes and (inode_number not in my_unallocated_inodes):
                 my_parent_inode[inode_number] = directoryentry.parent_inode
     my_parent_inode[2] = 2
@@ -278,10 +268,10 @@ def main():
                                                                                          inode_number,
                                                                                          parent_inode_number))
                 my_error = True
-        elif directory_name == "'..'":
-            if my_parent_inode[parent_inode_number] != parent_inode_number:  # Check this !!!!!!!!!!!
-                print("DIRECTORY INODE {} NAME '..' LINK TO INODE {} SHOULD BE {}".format(inode_number,
-                                                                                          parent_inode_number,
+        if directory_name == "'..'":
+            if my_parent_inode[parent_inode_number] != inode_number:  # Check this !!!!!!!!!!!
+                print("DIRECTORY INODE {} NAME '..' LINK TO INODE {} SHOULD BE {}".format(parent_inode_number,
+                                                                                          inode_number,
                                                                                           my_parent_inode[
                                                                                               parent_inode_number]))
 
